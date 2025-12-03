@@ -48,7 +48,7 @@ BUNGIE_API_KEY=your-32-character-hex-key
 
 ```bash
 # Global install
-destiny2-mcp
+destiny2-mcp-server
 
 # Or from source
 npm install
@@ -66,7 +66,7 @@ Add to claude_desktop_config.json:
 {
   "mcpServers": {
     "destiny2": {
-      "command": "destiny2-mcp",
+      "command": "destiny2-mcp-server",
       "env": {
         "BUNGIE_API_KEY": "your-api-key"
       }
