@@ -27,12 +27,12 @@
   "author": "Destiny 2 MCP Server Contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/destiny2-mcp-server.git"
+    "url": "https://github.com/Nadiar/destiny2-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/destiny2-mcp-server/issues"
+    "url": "https://github.com/Nadiar/destiny2-mcp-server/issues"
   },
-  "homepage": "https://github.com/yourusername/destiny2-mcp-server#readme",
+  "homepage": "https://github.com/Nadiar/destiny2-mcp-server#readme",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
