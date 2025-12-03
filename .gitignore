@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Manifest cache (downloaded from Bungie)
+.cache/
+
+# Test/development scripts
+test-*.mjs
+search-*.mjs
+find-*.mjs
+batch-*.mjs
+get-*.mjs
+lookup-*.mjs
+debug-*.mjs
+*.test.mjs
+records.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Optional
+.npmrc
