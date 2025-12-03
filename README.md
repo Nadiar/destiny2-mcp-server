@@ -23,8 +23,22 @@ npm install -g destiny2-mcp-server
 
 ### Configuration
 
-1. Get your API key: [Bungie Developer Portal](https://www.bungie.net/en/Application)
-2. Create .env file:
+#### 1. Create Bungie API Application
+
+Go to [Bungie Developer Portal](https://www.bungie.net/en/Application) and create a new application:
+
+**Required Settings:**
+
+- **Application Name**: `MCP Server for LLM` (or your preferred name)
+- **Application Status**: `Private`
+- **OAuth Client Type**: `Not applicable`
+- **Redirect URL**: Leave empty
+- **Scope**: Check `Read your Destiny 2 information (Vault, Inventory, and Vendors), as well as Destiny 1 Vault and Inventory data`
+- **Origin Header**: `*` (or your specific origin)
+
+After creating, copy your **API Key** (32-character hex string).
+
+#### 2. Create .env file
 
 ```env
 BUNGIE_API_KEY=your-32-character-hex-key
