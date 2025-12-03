@@ -4,9 +4,7 @@
   "description": "MCP server for Destiny 2 API integration",
   "main": "dist/index.js",
   "type": "module",
-  "bin": {
-    "destiny2-mcp": "./dist/index.js"
-  },
+  "bin": "./dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
