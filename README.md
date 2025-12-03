@@ -33,8 +33,8 @@ Go to [Bungie Developer Portal](https://www.bungie.net/en/Application) and creat
 - **Application Status**: `Private`
 - **OAuth Client Type**: `Not applicable`
 - **Redirect URL**: Leave empty
-- **Scope**: Check `Read your Destiny 2 information (Vault, Inventory, and Vendors), as well as Destiny 1 Vault and Inventory data`
-- **Origin Header**: `*` (or your specific origin)
+- **Scope**: Not applicable (server uses API key only, no OAuth)
+- **Origin Header**: `*`
 
 After creating, copy your **API Key** (32-character hex string).
 
