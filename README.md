@@ -169,6 +169,24 @@ Perk Columns:
 Curated Roll: Explosive Payload + Firefly
 ```
 
+### Item Images
+
+> "Show me the Fatebringer screenshot"
+
+The `get_item_image` tool can return either:
+
+- **Screenshot** (default): Large inspect image (~200KB) - great for detailed weapon views
+- **Icon**: Small inventory icon (~3KB) - useful for quick references
+
+```text
+# Fatebringer
+*Screenshot*
+
+[High-resolution weapon image displayed inline]
+```
+
+Use `imageType: "icon"` parameter for the small inventory icon instead.
+
 ### Clan Roster
 
 > "Show me the roster for my clan"
@@ -203,7 +221,7 @@ Top by Playtime:
 | `get_item_details` | Full item info with perks/stats |
 | `get_activity_definition` | Activity details from manifest |
 | `get_clan_roster` | Full clan member list |
-| `get_image` | Item/emblem icons as base64 |
+| `get_item_image` | Item screenshot or icon as base64 (supports imageType parameter) |
 
 ## License
 
