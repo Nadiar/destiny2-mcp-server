@@ -944,31 +944,49 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
 
   server.tool(
     'get_item_image',
-    'Get the icon/image for a Destiny 2 item. Returns the image directly.',
+    'Get the icon or screenshot for a Destiny 2 item. By default returns the large screenshot if available, or falls back to the small icon. Use imageType parameter to choose.',
     {
       itemHash: DestinyHashSchema.describe('Item hash from search_items (0-4294967295)'),
+      imageType: z.enum(['screenshot', 'icon', 'auto']).optional().describe('Type of image: "screenshot" (large inspect image), "icon" (small inventory icon), or "auto" (screenshot if available, else icon). Default: auto'),
     },
-    async ({ itemHash }) => {
+    async ({ itemHash, imageType = 'auto' }) => {
       try {
         const itemDef = await client.getItemDefinitionFull(itemHash) as {
-          displayProperties?: { name?: string; icon?: string; screenshot?: string };
+          displayProperties?: { name?: string; icon?: string };
+          screenshot?: string;
         };
         
         const icon = itemDef.displayProperties?.icon;
-        const screenshot = itemDef.displayProperties?.screenshot;
+        const screenshot = itemDef.screenshot; // Screenshot is at root level, not under displayProperties
         const name = itemDef.displayProperties?.name || 'Unknown Item';
         
-        if (!icon && !screenshot) {
+        // Determine which image to use based on imageType
+        let selectedImage: string | undefined;
+        let imageLabel: string;
+        
+        if (imageType === 'screenshot') {
+          selectedImage = screenshot;
+          imageLabel = 'Screenshot';
+        } else if (imageType === 'icon') {
+          selectedImage = icon;
+          imageLabel = 'Icon';
+        } else {
+          // auto: prefer screenshot, fall back to icon
+          selectedImage = screenshot || icon;
+          imageLabel = screenshot ? 'Screenshot' : 'Icon';
+        }
+        
+        if (!selectedImage) {
           return {
             content: [{
               type: 'text',
-              text: `No image available for item ${itemHash}`,
+              text: `No ${imageType === 'auto' ? 'image' : imageType} available for item ${itemHash} (${name})`,
             }],
           };
         }
 
         // Fetch the image and return as base64
-        const imageUrl = `https://www.bungie.net${screenshot || icon}`;
+        const imageUrl = `https://www.bungie.net${selectedImage}`;
         const response = await fetch(imageUrl);
         
         if (!response.ok) {
@@ -992,7 +1010,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           content: [
             {
               type: 'text',
-              text: `# ${name}`,
+              text: `# ${name}\n*${imageLabel}*`,
             },
             {
               type: 'image',
