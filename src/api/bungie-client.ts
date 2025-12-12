@@ -13,80 +13,175 @@ import { DestinyComponentType, DestinyActivityModeType } from '../types/index.js
 const BUNGIE_API_BASE = 'https://www.bungie.net/Platform';
 const BUNGIE_STATS_BASE = 'https://stats.bungie.net/Platform';
 
+/**
+ * Configuration options for BungieApiClient
+ */
+export interface BungieApiClientOptions {
+  /** Minimum milliseconds between requests (default: 150) */
+  rateLimitMs?: number;
+  /** Maximum retry attempts for failed requests (default: 3) */
+  maxRetries?: number;
+  /** Request timeout in milliseconds (default: 30000) */
+  timeoutMs?: number;
+}
+
+/**
+ * Error class for Bungie API errors with retry information
+ */
+export class BungieApiError extends Error {
+  readonly statusCode?: number;
+  readonly errorCode?: number;
+  readonly errorStatus?: string;
+  readonly retryable: boolean;
+
+  constructor(message: string, options?: { statusCode?: number; errorCode?: number; errorStatus?: string; retryable?: boolean }) {
+    super(message);
+    this.name = 'BungieApiError';
+    this.statusCode = options?.statusCode;
+    this.errorCode = options?.errorCode;
+    this.errorStatus = options?.errorStatus;
+    this.retryable = options?.retryable ?? false;
+  }
+}
+
 export class BungieApiClient {
   private apiKey: string;
+  private options: Required<BungieApiClientOptions>;
+  
   // Simple per-host rate limiter: max N requests per interval
   private static lastRequestTime = 0;
-  private static minIntervalMs = 150; // ~6-7 req/sec to be polite
   private static rateLimitMutex: Promise<void> = Promise.resolve();
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, options: BungieApiClientOptions = {}) {
     if (!apiKey) {
       throw new Error('BUNGIE_API_KEY is required');
     }
     this.apiKey = apiKey;
+    this.options = {
+      rateLimitMs: options.rateLimitMs ?? 150,
+      maxRetries: options.maxRetries ?? 3,
+      timeoutMs: options.timeoutMs ?? 30000,
+    };
+  }
+
+  /**
+   * Calculates exponential backoff delay with jitter
+   */
+  private getBackoffDelay(attempt: number): number {
+    // Base delay: 500ms, exponential: 500, 1000, 2000, 4000...
+    const baseDelay = 500;
+    const exponentialDelay = baseDelay * Math.pow(2, attempt);
+    // Add jitter (0-25% of delay) to prevent thundering herd
+    const jitter = exponentialDelay * Math.random() * 0.25;
+    return Math.min(exponentialDelay + jitter, 30000); // Cap at 30 seconds
+  }
+
+  /**
+   * Determines if an error is retryable
+   */
+  private isRetryableError(status: number): boolean {
+    // Retry on: rate limit, server errors, gateway errors
+    return status === 429 || (status >= 500 && status < 600);
   }
 
   private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = endpoint.startsWith('http') ? endpoint : `${BUNGIE_API_BASE}${endpoint}`;
-    try {
-      // Atomic rate limiting via mutex
-      await (BungieApiClient.rateLimitMutex = BungieApiClient.rateLimitMutex.then(async () => {
-        const now = Date.now();
-        const elapsed = now - BungieApiClient.lastRequestTime;
-        const waitMs = Math.max(0, BungieApiClient.minIntervalMs - elapsed);
-        if (waitMs > 0) {
-          await new Promise(r => setTimeout(r, waitMs));
-        }
-        BungieApiClient.lastRequestTime = Date.now();
-      }));
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= this.options.maxRetries; attempt++) {
+      try {
+        // Atomic rate limiting via mutex
+        await (BungieApiClient.rateLimitMutex = BungieApiClient.rateLimitMutex.then(async () => {
+          const now = Date.now();
+          const elapsed = now - BungieApiClient.lastRequestTime;
+          const waitMs = Math.max(0, this.options.rateLimitMs - elapsed);
+          if (waitMs > 0) {
+            await new Promise(r => setTimeout(r, waitMs));
+          }
+          BungieApiClient.lastRequestTime = Date.now();
+        }));
 
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'X-API-Key': this.apiKey,
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-      });
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.options.timeoutMs);
 
-      if (!response.ok) {
-        // Retry once on 429/5xx with small backoff
-        if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
-          await new Promise(r => setTimeout(r, 500));
-          const retry = await fetch(url, {
+        try {
+          const response = await fetch(url, {
             ...options,
+            signal: controller.signal,
             headers: {
               'X-API-Key': this.apiKey,
               'Content-Type': 'application/json',
               ...options.headers,
             },
           });
-          if (!retry.ok) {
-            throw new Error(`Bungie API error: ${retry.status} ${retry.statusText}`);
-          }
-          const retryData = await retry.json() as BungieResponse<T>;
-          if (retryData.ErrorCode !== 1) {
-            throw new Error(`Bungie API error: ${retryData.ErrorStatus} - ${retryData.Message}`);
-          }
-          return retryData.Response;
-        }
-        throw new Error(`Bungie API error: ${response.status} ${response.statusText}`);
-      }
 
-      const data = await response.json() as BungieResponse<T>;
-      if (data.ErrorCode !== 1) {
-        throw new Error(`Bungie API error: ${data.ErrorStatus} - ${data.Message}`);
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            if (this.isRetryableError(response.status) && attempt < this.options.maxRetries) {
+              const delay = this.getBackoffDelay(attempt);
+              await new Promise(r => setTimeout(r, delay));
+              continue;
+            }
+            throw new BungieApiError(
+              `Bungie API error: ${response.status} ${response.statusText}`,
+              { statusCode: response.status, retryable: this.isRetryableError(response.status) }
+            );
+          }
+
+          const data = await response.json() as BungieResponse<T>;
+          if (data.ErrorCode !== 1) {
+            // Some Bungie error codes are retryable
+            const retryable = data.ErrorCode === 5 || // SystemDisabled
+                             data.ErrorCode === 35 || // ThrottleLimit
+                             data.ErrorCode === 36;   // PerEndpointRequestThrottleExceeded
+            
+            if (retryable && attempt < this.options.maxRetries) {
+              const delay = this.getBackoffDelay(attempt);
+              await new Promise(r => setTimeout(r, delay));
+              continue;
+            }
+            throw new BungieApiError(
+              `Bungie API error: ${data.ErrorStatus} - ${data.Message}`,
+              { errorCode: data.ErrorCode, errorStatus: data.ErrorStatus, retryable }
+            );
+          }
+          return data.Response;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      } catch (err: any) {
+        // Handle abort (timeout)
+        if (err.name === 'AbortError') {
+          lastError = new BungieApiError('Request timed out', { retryable: true });
+          if (attempt < this.options.maxRetries) {
+            const delay = this.getBackoffDelay(attempt);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+        } else if (err instanceof BungieApiError) {
+          lastError = err;
+          if (!err.retryable || attempt >= this.options.maxRetries) {
+            break;
+          }
+        } else {
+          // Network or other error - may be retryable
+          lastError = err;
+          if (attempt < this.options.maxRetries) {
+            const delay = this.getBackoffDelay(attempt);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+        }
       }
-      return data.Response;
-    } catch (err: any) {
-      // Sanitize possible leakage of API key in error messages
-      const msg = String(err?.message || err);
-      const redacted = this.apiKey ? msg.replace(new RegExp(this.apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '***') : msg;
-      const e = new Error(redacted);
-      e.name = err?.name || 'BungieApiError';
-      throw e;
     }
+
+    // Sanitize possible leakage of API key in error messages
+    const msg = String(lastError?.message || lastError || 'Unknown error');
+    const redacted = this.apiKey ? msg.replace(new RegExp(this.apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '***') : msg;
+    const e = new BungieApiError(redacted);
+    throw e;
   }
 
   async searchPlayer(displayName: string, displayNameCode: number): Promise<UserSearchResponse> {

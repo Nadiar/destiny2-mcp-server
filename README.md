@@ -223,6 +223,38 @@ Top by Playtime:
 | `get_clan_roster` | Full clan member list |
 | `get_item_image` | Item screenshot or icon as base64 (supports imageType parameter) |
 
+## Documentation
+
+- **[API Reference](docs/API.md)** - Complete tool reference with examples
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+- **[Docker Deployment](docs/DOCKER.md)** - Running with Docker
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and contribution guidelines.
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **CI**: Runs on every push and pull request
+  - Tests on Node.js 18, 20, and 22
+  - Linting and formatting checks
+  - Security audits
+  - Docker image builds
+  - Code coverage reports
+
+- **Release**: Automated releases on version tags
+  - Publishes to npm registry
+  - Builds and pushes Docker images to GitHub Container Registry
+  - Creates GitHub releases with auto-generated notes
+
+- **Dependabot**: Automated dependency updates
+  - Weekly checks for npm, GitHub Actions, and Docker base images
+  - Grouped minor/patch updates
+  - Security vulnerability alerts
+
 ## License
 
 MIT - See LICENSE file for details.

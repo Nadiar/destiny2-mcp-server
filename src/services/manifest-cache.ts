@@ -112,6 +112,16 @@ const WATERMARK_SEASONS: Record<string, { name: string; number: number }> = {
   '859498e47c73b11f9e4af20bf6cfea16.png': { name: 'Fishing/Deep Dive', number: 21 },
 };
 
+/**
+ * Configuration options for ManifestCache
+ */
+export interface ManifestCacheOptions {
+  /** Cache TTL in hours (default: 24) */
+  ttlHours?: number;
+  /** Maximum cache size in megabytes (default: 100) */
+  maxSizeMb?: number;
+}
+
 export class ManifestCache {
   private items: Map<number, ItemDefinition> = new Map();
   private itemsByName: Map<string, ItemDefinition[]> = new Map();
@@ -119,9 +129,14 @@ export class ManifestCache {
   private collectibles: Map<number, string> = new Map();
   private initialized = false;
   private apiKey: string;
+  private options: Required<ManifestCacheOptions>;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, options: ManifestCacheOptions = {}) {
     this.apiKey = apiKey;
+    this.options = {
+      ttlHours: options.ttlHours ?? 24,
+      maxSizeMb: options.maxSizeMb ?? 100,
+    };
   }
 
   private async ensureCacheDir(): Promise<void> {
@@ -136,6 +151,15 @@ export class ManifestCache {
         'X-API-Key': this.apiKey,
       },
     });
+  }
+
+  /**
+   * Checks if the cached version is still within TTL
+   */
+  private isCacheExpired(cachedVersion: ManifestVersion): boolean {
+    const downloadedAt = new Date(cachedVersion.downloadedAt);
+    const ttlMs = this.options.ttlHours * 60 * 60 * 1000;
+    return Date.now() - downloadedAt.getTime() > ttlMs;
   }
 
   private async getCurrentManifestVersion(): Promise<string> {
@@ -319,34 +343,65 @@ export class ManifestCache {
       return;
     }
 
-    try {
-      // Check if we need to update
-      const [currentVersion, cachedVersion] = await Promise.all([
-        this.getCurrentManifestVersion(),
-        this.getCachedVersion(),
-      ]);
+    // First, try to load existing cache (for graceful degradation)
+    const hasExistingCache = await this.loadFromCache();
+    const cachedVersion = await this.getCachedVersion();
 
-      const needsUpdate = !cachedVersion || cachedVersion.version !== currentVersion;
+    try {
+      // Try to check for updates
+      const currentVersion = await this.getCurrentManifestVersion();
+      
+      // Determine if we need to update based on version or TTL
+      const needsUpdate = !cachedVersion || 
+        cachedVersion.version !== currentVersion ||
+        this.isCacheExpired(cachedVersion);
 
       if (needsUpdate) {
-        console.error(`[ManifestCache] Manifest update needed (current: ${currentVersion}, cached: ${cachedVersion?.version || 'none'})`);
+        const reason = !cachedVersion ? 'no cache' :
+          cachedVersion.version !== currentVersion ? 'version mismatch' :
+          'cache expired';
+        console.error(`[ManifestCache] Manifest update needed (${reason}). Current: ${currentVersion}, Cached: ${cachedVersion?.version || 'none'}`);
         await this.downloadManifest();
+        
+        // Reload from freshly downloaded cache
+        const loaded = await this.loadFromCache();
+        if (!loaded) {
+          throw new Error('Failed to load manifest cache after download');
+        }
       } else {
-        console.error(`[ManifestCache] Using cached manifest (version: ${cachedVersion.version})`);
-      }
-
-      // Load into memory
-      const loaded = await this.loadFromCache();
-      if (!loaded) {
-        throw new Error('Failed to load manifest cache');
+        console.error(`[ManifestCache] Using cached manifest (version: ${cachedVersion.version}, age: ${this.getCacheAgeString(cachedVersion)})`);
       }
 
       this.initialized = true;
       console.error(`[ManifestCache] Initialized with ${this.items.size} items`);
     } catch (error) {
+      // Graceful degradation: use stale cache if available
+      if (hasExistingCache && this.items.size > 0) {
+        console.error(`[ManifestCache] Update failed, using stale cache (${this.items.size} items):`, error);
+        this.initialized = true;
+        return;
+      }
       console.error('[ManifestCache] Initialization failed:', error);
       throw error;
     }
+  }
+
+  /**
+   * Gets a human-readable string for cache age
+   */
+  private getCacheAgeString(cachedVersion: ManifestVersion): string {
+    const downloadedAt = new Date(cachedVersion.downloadedAt);
+    const ageMs = Date.now() - downloadedAt.getTime();
+    const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
+    if (ageHours < 1) {
+      const ageMinutes = Math.floor(ageMs / (1000 * 60));
+      return `${ageMinutes} minutes`;
+    }
+    if (ageHours < 24) {
+      return `${ageHours} hours`;
+    }
+    const ageDays = Math.floor(ageHours / 24);
+    return `${ageDays} days`;
   }
 
   private getItemTypeName(itemType: number): string {

@@ -30,6 +30,7 @@ records.json
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
@@ -40,3 +41,18 @@ lerna-debug.log*
 
 # Optional
 .npmrc
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Husky
+.husky/_/
+
+# Vitest
+test-results/
+# Integration test artifacts
+.test-cache/
+
+# Playwright (if used)
+playwright-report/

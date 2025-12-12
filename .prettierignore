@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Cache
+.cache/
+
+# Environment
+.env
+.env.local
+
+# Coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Test artifacts
+test-results/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -6,23 +6,32 @@ import { z } from 'zod';
 import { BungieApiClient } from './api/index.js';
 import { ManifestCache } from './services/index.js';
 import { registerTools } from './tools/index.js';
+import { loadConfig, getConfigHelp, isValidApiKeyFormat, type Config } from './config.js';
 import dotenv from 'dotenv';
 import logger from './services/logger.js';
+
+// Package version - keep in sync with package.json
+const VERSION = '1.0.2';
 
 // Load environment variables from .env if present
 dotenv.config();
 
-const BUNGIE_API_KEY = process.env.BUNGIE_API_KEY;
-
-if (!BUNGIE_API_KEY) {
-  logger.error('Missing environment variable BUNGIE_API_KEY');
-  logger.info('Get API key: https://www.bungie.net/en/Application');
-  logger.info('Set in .env: BUNGIE_API_KEY=your-api-key');
+// Load and validate configuration
+let config: Config;
+try {
+  config = loadConfig();
+} catch (error) {
+  logger.error('Configuration error');
+  if (error instanceof Error) {
+    logger.error(error.message);
+  }
+  logger.info('Configuration help:');
+  console.error(getConfigHelp());
   process.exit(1);
 }
 
-// Validate API key format (32 hex chars expected)
-if (!/^[a-f0-9]{32}$/i.test(BUNGIE_API_KEY)) {
+// Additional format check with warning (non-blocking)
+if (!isValidApiKeyFormat(config.BUNGIE_API_KEY)) {
   logger.warn('API key format appears invalid (expected 32 hex characters)');
   logger.warn('Key may still work if Bungie changed format, but verify at: https://www.bungie.net/en/Application');
 }
@@ -30,14 +39,21 @@ if (!/^[a-f0-9]{32}$/i.test(BUNGIE_API_KEY)) {
 // Create the MCP server
 const server = new McpServer({
   name: 'destiny2-mcp-server',
-  version: '1.0.0',
+  version: VERSION,
 });
 
-// Create the Bungie API client
-const bungieClient = new BungieApiClient(BUNGIE_API_KEY);
+// Create the Bungie API client with config
+const bungieClient = new BungieApiClient(config.BUNGIE_API_KEY, {
+  rateLimitMs: config.API_RATE_LIMIT_MS,
+  maxRetries: config.API_MAX_RETRIES,
+  timeoutMs: config.API_TIMEOUT_MS,
+});
 
-// Create the manifest cache for local item search
-const manifestCache = new ManifestCache(BUNGIE_API_KEY);
+// Create the manifest cache for local item search with config
+const manifestCache = new ManifestCache(config.BUNGIE_API_KEY, {
+  ttlHours: config.CACHE_TTL_HOURS,
+  maxSizeMb: config.CACHE_MAX_SIZE_MB,
+});
 
 // Register all Destiny 2 tools
 registerTools(server, bungieClient, manifestCache);

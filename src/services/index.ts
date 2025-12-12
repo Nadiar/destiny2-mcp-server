@@ -1,1 +1,1 @@
-export { ManifestCache } from './manifest-cache.js';
+export { ManifestCache, type ManifestCacheOptions } from './manifest-cache.js';

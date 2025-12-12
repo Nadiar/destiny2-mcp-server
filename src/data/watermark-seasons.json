@@ -1,0 +1,67 @@
+{
+  "$schema": "./watermark-seasons.schema.json",
+  "seasons": {
+    "36418dde751148bd3b95a023d491ea73.png": { "name": "Season of the Splicer", "number": 14 },
+    "d105aa342f2d0c53a90a28477552f61f.png": { "name": "Season of Arrivals", "number": 11 },
+    "7b41678824a620d4f295984862702179.png": { "name": "Season of the Risen", "number": 16 },
+    "7b48b09fbb50634680168d5880b16bc9.png": { "name": "Season of the Chosen", "number": 13 },
+    "914322d11262322c839a5388db2a4943.png": { "name": "Season of the Lost", "number": 15 },
+    "41d05b7cb5cc0a384af07ee9b7d36dd2.png": { "name": "Season of the Haunted", "number": 17 },
+    "0b441021fbc328e6d0e2abc895f5c96e.png": { "name": "Season of Plunder", "number": 18 },
+    "bce51cf90464e28026140df77c4eb6ce.png": { "name": "Season of the Hunt", "number": 12 },
+    "9bfaa5536772e2f3ef1252813a21c4d1.png": { "name": "Season of the Seraph", "number": 19 },
+    "e4a1a5aaeb9f65cc5276fd4d86d1c1b2.png": { "name": "Season of Defiance", "number": 20 },
+    "e775dcb3d47e3d54e0e24fbdb64b5763.png": { "name": "Season of the Deep", "number": 21 },
+    "d4141b2247cf999c73d3dc409f9d00f7.png": { "name": "Season of the Witch", "number": 22 },
+    "0ac354c1c326441716ddb15d2c158c59.png": { "name": "Season of the Wish", "number": 23 }
+  },
+  "episodes": {
+    "6f17d323d81dd683086d88a9268f8106.png": { "name": "Episode: Echoes", "number": 24 },
+    "b9620c9768c298515caeb183a3388163.png": { "name": "Episode: Revenant", "number": 25 },
+    "6129365b4fad6754f2b8c4478fc3c4ac.png": { "name": "Episode: Heresy", "number": 26 }
+  },
+  "expansions": {
+    "50d36366595897d49b5d33e101c8fd07.png": { "name": "The Final Shape", "number": 24 },
+    "fc31e8ede7cc15908d6e2b39167afbcf.png": { "name": "Lightfall", "number": 20 },
+    "c23c9ec8709fecbc678ea1d0a42f6a41.png": { "name": "The Witch Queen", "number": 16 },
+    "c1c542d176c85e1e0c8c041f1690c5e4.png": { "name": "Beyond Light", "number": 12 },
+    "6a52f7cd9099990157c739a8260babea.png": { "name": "Shadowkeep", "number": 8 },
+    "e10338777d1d8633e073846e613b6c77.png": { "name": "Forsaken", "number": 4 }
+  },
+  "raids": {
+    "bcc26708e314306fb2fc8cb98fcbf47e.png": { "name": "Grasp of Avarice/30th Anniversary", "number": 15 },
+    "a15754752f40aaf7b1b00aadb70a8f35.png": { "name": "Garden of Salvation", "number": 8 },
+    "5232219633cc4d90570bffda36caccf4.png": { "name": "Vow of the Disciple", "number": 16 },
+    "2dc17f123b7449b14144e76cfbeb2309.png": { "name": "King's Fall (Reprised)", "number": 17 },
+    "fc02418ad2002351a3f88faa5b14eb88.png": { "name": "Crota's End (Reprised)", "number": 22 },
+    "03d000a7f097b6e12012b8c2eab0b1ad.png": { "name": "Root of Nightmares", "number": 20 },
+    "0d6c3365022ed3b059eac467b076978f.png": { "name": "Salvation's Edge", "number": 24 },
+    "661c84a377389a3b8a1fc38b44189b41.png": { "name": "Vespers Host", "number": 25 }
+  },
+  "pvp": {
+    "4f28dc0f39238fe25d298a894ea71389.png": { "name": "Iron Banner", "number": 15 },
+    "ae5c7f708a36f754c2f68c65c88ab9aa.png": { "name": "Trials of Osiris", "number": 11 },
+    "a5e27dc822aa72787f388bd1fc115803.png": { "name": "Trials of Osiris (Reprised)", "number": 17 },
+    "7d815c943977fe71bbf00caf1bd9c514.png": { "name": "King's Fall (Reprised)", "number": 17 },
+    "aeb95eb1abe8e45e1fe2573d6b3ab3c5.png": { "name": "Crucible (Pre-Beyond Light)", "number": 7 },
+    "da5f961ef97b78293cc498978c10e178.png": { "name": "Crucible (Redrix Era)", "number": 4 }
+  },
+  "activities": {
+    "2c022e452f395db7b1daec1cb44631fc.png": { "name": "Gambit/Vanguard", "number": 4 },
+    "b2410a70904ab0b09a716054c83fbcfd.png": { "name": "Vanguard/World", "number": 12 },
+    "75adde12e4e9c9fb237e492d8258eb73.png": { "name": "Dares of Eternity", "number": 15 },
+    "249813e647271a8227bae0d8a39ed505.png": { "name": "Nightfall", "number": 19 },
+    "859498e47c73b11f9e4af20bf6cfea16.png": { "name": "Fishing/Deep Dive", "number": 21 }
+  },
+  "events": {
+    "50c3ebe414c6946429934d79504922fa.png": { "name": "Solstice", "number": 14 },
+    "53dc0b02306726ff1517af33ac908cef.png": { "name": "Festival of the Lost", "number": 15 },
+    "83fbcacd223402c09af4b7ab067f8cce.png": { "name": "Dawning", "number": 12 }
+  },
+  "legacy": {
+    "a0556509f8825756b6b89f59f90528ec.png": { "name": "World Drop (Current)", "number": 23 },
+    "e0c16042274fd7d9cbffc4489e340c5d.png": { "name": "Black Armory", "number": 5 },
+    "58d3ec8338cc9746a2e0cf901fbcec0e.png": { "name": "Menagerie/Opulence", "number": 7 },
+    "7ba9d804508dd083ec20fcdb8ba0869d.png": { "name": "Curse of Osiris", "number": 2 }
+  }
+}
