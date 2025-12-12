@@ -51,7 +51,7 @@ describeIntegration('Bungie API Integration Tests', () => {
         
         expect(activity).toBeDefined();
         console.log(`  🎮 Activity retrieved successfully`);
-      } catch (error) {
+      } catch {
         // Some hashes may be outdated
         console.log(`  ⚠️ Activity hash ${activityHash} not found (may be outdated)`);
         expect(true).toBe(true); // Don't fail for outdated hashes
@@ -69,7 +69,7 @@ describeIntegration('Bungie API Integration Tests', () => {
         
         expect(item).toBeDefined();
         console.log(`  📋 Item retrieved successfully`);
-      } catch (error) {
+      } catch {
         // Hash might be outdated
         console.log(`  ⚠️ Item hash ${gjallyHash} not found (may be outdated)`);
         expect(true).toBe(true);

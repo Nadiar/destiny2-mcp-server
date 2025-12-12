@@ -184,7 +184,7 @@ export class BungieApiClient {
     throw e;
   }
 
-  async searchPlayer(displayName: string, displayNameCode: number): Promise<UserSearchResponse> {
+  async searchPlayer(displayName: string, _displayNameCode: number): Promise<UserSearchResponse> {
     return this.fetch<UserSearchResponse>('/User/Search/GlobalName/0/', {
       method: 'POST',
       body: JSON.stringify({
