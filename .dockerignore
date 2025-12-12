@@ -58,10 +58,9 @@ __tests__/
 coverage/
 .nyc_output/
 
-# Development config
+# Development config (keep tsconfig.json for build)
 .eslintrc*
 .prettierrc*
-tsconfig.json
 jest.config.*
 vitest.config.*
 playwright.config.*
