@@ -9,14 +9,14 @@ import {
   DestinyActivityModeType,
   DestinyComponentType,
 } from '../types/index.js';
-import { 
-  getDayOneTriumphHashes, 
-  getDayOneBoost, 
-  countDayOneTriumphs, 
-  isEliteClan, 
+import {
+  getDayOneTriumphHashes,
+  getDayOneBoost,
+  countDayOneTriumphs,
+  isEliteClan,
   getEliteClanBoost,
   ELITE_CLANS,
-  type DayOneTriumph 
+  type DayOneTriumph,
 } from '../data/day-one-triumphs.js';
 
 // Bungie API hashes are unsigned 32-bit integers
@@ -39,58 +39,87 @@ async function batchExecute<T, R>(
 
 function getClassName(classType: DestinyClass): string {
   switch (classType) {
-    case DestinyClass.Titan: return 'Titan';
-    case DestinyClass.Hunter: return 'Hunter';
-    case DestinyClass.Warlock: return 'Warlock';
-    default: return 'Unknown';
+    case DestinyClass.Titan:
+      return 'Titan';
+    case DestinyClass.Hunter:
+      return 'Hunter';
+    case DestinyClass.Warlock:
+      return 'Warlock';
+    default:
+      return 'Unknown';
   }
 }
 
 function getRaceName(raceType: DestinyRace): string {
   switch (raceType) {
-    case DestinyRace.Human: return 'Human';
-    case DestinyRace.Awoken: return 'Awoken';
-    case DestinyRace.Exo: return 'Exo';
-    default: return 'Unknown';
+    case DestinyRace.Human:
+      return 'Human';
+    case DestinyRace.Awoken:
+      return 'Awoken';
+    case DestinyRace.Exo:
+      return 'Exo';
+    default:
+      return 'Unknown';
   }
 }
 
 function getGenderName(genderType: DestinyGender): string {
   switch (genderType) {
-    case DestinyGender.Male: return 'Male';
-    case DestinyGender.Female: return 'Female';
-    default: return 'Unknown';
+    case DestinyGender.Male:
+      return 'Male';
+    case DestinyGender.Female:
+      return 'Female';
+    default:
+      return 'Unknown';
   }
 }
 
 function getMembershipTypeName(type: number): string {
   switch (type) {
-    case 1: return 'Xbox';
-    case 2: return 'PlayStation';
-    case 3: return 'Steam';
-    case 4: return 'Blizzard';
-    case 5: return 'Stadia';
-    case 6: return 'Epic Games';
-    case 254: return 'Bungie.net';
-    default: return 'Unknown';
+    case 1:
+      return 'Xbox';
+    case 2:
+      return 'PlayStation';
+    case 3:
+      return 'Steam';
+    case 4:
+      return 'Blizzard';
+    case 5:
+      return 'Stadia';
+    case 6:
+      return 'Epic Games';
+    case 254:
+      return 'Bungie.net';
+    default:
+      return 'Unknown';
   }
 }
 
-export function registerTools(server: McpServer, client: BungieApiClient, manifestCache: ManifestCache): void {
+export function registerTools(
+  server: McpServer,
+  client: BungieApiClient,
+  manifestCache: ManifestCache
+): void {
   server.tool(
     'search_player',
     'EXACT MATCH ONLY: Search for a Destiny 2 player when you have their complete Bungie Name with code (e.g., "Guardian#1234"). If you only have a partial name or don\'t know the #code, use find_players instead which does fuzzy matching.',
     {
-      bungieName: z.string().describe('Complete Bungie Name in format "DisplayName#Code" (e.g., "Datto#6446", "ATP#6173"). IMPORTANT: You must have the exact 4-digit code. If you don\'t know the code, use find_players tool instead for fuzzy search.'),
+      bungieName: z
+        .string()
+        .describe(
+          'Complete Bungie Name in format "DisplayName#Code" (e.g., "Datto#6446", "ATP#6173"). IMPORTANT: You must have the exact 4-digit code. If you don\'t know the code, use find_players tool instead for fuzzy search.'
+        ),
     },
     async ({ bungieName }) => {
       const match = bungieName.match(/^(.+)#(\d+)$/);
       if (!match) {
         return {
-          content: [{
-            type: 'text',
-            text: 'Invalid Bungie Name format. Please use "DisplayName#Code" (e.g., "Guardian#1234"). For partial name search without the #code, use find_players instead.',
-          }],
+          content: [
+            {
+              type: 'text',
+              text: 'Invalid Bungie Name format. Please use "DisplayName#Code" (e.g., "Guardian#1234"). For partial name search without the #code, use find_players instead.',
+            },
+          ],
           isError: true,
         };
       }
@@ -100,32 +129,38 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
 
       try {
         const results = await client.searchPlayerByExactName(displayName, displayNameCode);
-        
+
         if (results.length === 0) {
           return {
-            content: [{
-              type: 'text',
-              text: `No player found with Bungie Name: ${bungieName}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `No player found with Bungie Name: ${bungieName}`,
+              },
+            ],
           };
         }
 
-        const formatted = results.map(m => 
-          `- ${getMembershipTypeName(m.membershipType)}: ${m.membershipId}`
-        ).join('\n');
+        const formatted = results
+          .map((m) => `- ${getMembershipTypeName(m.membershipType)}: ${m.membershipId}`)
+          .join('\n');
 
         return {
-          content: [{
-            type: 'text',
-            text: `Found player ${bungieName}:\n${formatted}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Found player ${bungieName}:\n${formatted}`,
+            },
+          ],
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error searching for player: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error searching for player: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -136,18 +171,24 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     'find_players',
     'FUZZY SEARCH: Find Destiny 2 players by partial name without needing the exact #code. This is the PRIMARY tool for player lookup when you don\'t have the complete Bungie Name. Returns multiple matches sorted by confidence score to help identify legitimate accounts vs. trolls/fakes. Use this for: "find ATP", "lookup Datto", "search for bog", etc.',
     {
-      namePrefix: z.string().describe('ANY part of player name to search for - just type what you know (e.g., "Datto" finds "Datto#6446", "ATP" finds "ATP#6173", "bog" finds "Bog on my dog#7426"). Does NOT require the #code. Case-insensitive fuzzy matching.'),
+      namePrefix: z
+        .string()
+        .describe(
+          'ANY part of player name to search for - just type what you know (e.g., "Datto" finds "Datto#6446", "ATP" finds "ATP#6173", "bog" finds "Bog on my dog#7426"). Does NOT require the #code. Case-insensitive fuzzy matching.'
+        ),
     },
     async ({ namePrefix }) => {
       try {
         const response = await client.searchPlayer(namePrefix, 0);
-        
+
         if (!response.searchResults || response.searchResults.length === 0) {
           return {
-            content: [{
-              type: 'text',
-              text: `No players found matching "${namePrefix}". Try a different name or spelling.`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `No players found matching "${namePrefix}". Try a different name or spelling.`,
+              },
+            ],
           };
         }
 
@@ -174,7 +215,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           response.searchResults.map(async (result) => {
             const fullId = `${result.bungieGlobalDisplayName}#${result.bungieGlobalDisplayNameCode}`;
             const memberships: Array<{ platform: string; id: string }> = [];
-            
+
             let totalPlaytimeHours = 0;
             let lastPlayed: Date | null = null;
             let activeScore = 0;
@@ -188,7 +229,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             if (result.destinyMemberships && result.destinyMemberships.length > 0) {
               // Use primary membership for profile lookup
               const primary = result.destinyMemberships[0];
-              
+
               for (const membership of result.destinyMemberships) {
                 memberships.push({
                   platform: getMembershipTypeName(membership.membershipType),
@@ -204,7 +245,9 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
                     DestinyComponentType.Characters,
                     DestinyComponentType.Records,
                   ]),
-                  client.getGroupsForMember(primary.membershipType, primary.membershipId).catch(() => null),
+                  client
+                    .getGroupsForMember(primary.membershipType, primary.membershipId)
+                    .catch(() => null),
                 ]);
 
                 if (profile.profile?.data) {
@@ -214,13 +257,13 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
                 if (profile.profileRecords?.data) {
                   activeScore = profile.profileRecords.data.activeScore || 0;
                   lifetimeScore = profile.profileRecords.data.lifetimeScore || 0;
-                  
+
                   // Check for day-one raid triumphs
                   const records = profile.profileRecords.data.records;
                   if (records) {
                     const dayOneHashes = getDayOneTriumphHashes();
                     const completedDayOneHashes: number[] = [];
-                    
+
                     for (const hash of dayOneHashes) {
                       const record = records[hash];
                       // A triumph is complete if ObjectiveNotCompleted bit (4) is NOT set
@@ -229,7 +272,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
                         completedDayOneHashes.push(hash);
                       }
                     }
-                    
+
                     const dayOneResult = countDayOneTriumphs(completedDayOneHashes);
                     dayOneCount = dayOneResult.count;
                     dayOneTriumphs = dayOneResult.triumphs;
@@ -255,7 +298,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             }
 
             // Calculate days since last played
-            const daysSinceLastPlayed = lastPlayed 
+            const daysSinceLastPlayed = lastPlayed
               ? Math.floor((Date.now() - lastPlayed.getTime()) / (1000 * 60 * 60 * 24))
               : 9999;
 
@@ -265,7 +308,10 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             let confidence = 0;
 
             // Playtime score (0-30): 500+ hours = max, log scale
-            const playtimeScore = Math.min(30, (Math.log10(totalPlaytimeHours + 1) / Math.log10(501)) * 30);
+            const playtimeScore = Math.min(
+              30,
+              (Math.log10(totalPlaytimeHours + 1) / Math.log10(501)) * 30
+            );
             confidence += playtimeScore;
 
             // Lifetime triumph score (0-20): 100k+ = max
@@ -296,7 +342,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             const inEliteClan = isEliteClan(clanTag || undefined);
 
             // Day-one raid bonus (verified elite status via triumph completion)
-            const completedDayOneHashes = dayOneTriumphs.map(t => t.hash);
+            const completedDayOneHashes = dayOneTriumphs.map((t) => t.hash);
             confidence += getDayOneBoost(completedDayOneHashes);
 
             // Round to nearest integer (can exceed 100 for day-one raiders or elite clan members)
@@ -348,7 +394,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         let output = `# Players matching "${namePrefix}"\n\n`;
         output += `Found ${playerResults.length} result(s)${response.hasMore ? ' (more available)' : ''}, sorted by confidence:\n\n`;
         output += `> **Confidence Score** weighs: playtime (30%), lifetime triumph (20%), active triumph (15%), recency (15%), clan (10%), plus bonus for verified day-one raid clears and elite clan membership. Players with day-one completions are proven elite raiders.\n\n`;
-        
+
         for (const result of playerResults) {
           output += `## ${result.fullId}`;
           if (result.dayOneCount > 0) {
@@ -359,7 +405,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           }
           output += `\n`;
           output += `**Confidence:** ${result.confidence}/100 - ${result.confidenceLabel}\n`;
-          
+
           if (result.memberships.length > 0) {
             for (const membership of result.memberships) {
               output += `- **${membership.platform}:** ${membership.id}\n`;
@@ -367,7 +413,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           } else {
             output += `- No active Destiny 2 memberships\n`;
           }
-          
+
           // Show stats that contributed to score
           if (result.totalPlaytimeHours > 0 || result.lifetimeScore > 0) {
             output += `- **Playtime:** ${result.totalPlaytimeHours.toLocaleString()} hours\n`;
@@ -404,10 +450,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error searching for players: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error searching for players: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -437,10 +485,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
 
         if (!profile.profile?.data) {
           return {
-            content: [{
-              type: 'text',
-              text: 'Profile data not available (may be private)',
-            }],
+            content: [
+              {
+                type: 'text',
+                text: 'Profile data not available (may be private)',
+              },
+            ],
           };
         }
 
@@ -448,7 +498,9 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         let accountCreated: string | null = null;
         if (linkedProfiles?.bnetMembership?.membershipId) {
           try {
-            const bnetUser = await client.getBungieNetUser(linkedProfiles.bnetMembership.membershipId);
+            const bnetUser = await client.getBungieNetUser(
+              linkedProfiles.bnetMembership.membershipId
+            );
             if (bnetUser.firstAccess) {
               accountCreated = new Date(bnetUser.firstAccess).toLocaleDateString();
             }
@@ -461,14 +513,14 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         const userInfo = profileData.userInfo;
         const displayName = userInfo.bungieGlobalDisplayName || userInfo.displayName;
         const displayCode = userInfo.bungieGlobalDisplayNameCode || '';
-        
+
         let output = `# Profile: ${displayName}#${displayCode}\n\n`;
         output += `**Platform:** ${getMembershipTypeName(userInfo.membershipType)}\n`;
         if (accountCreated) {
           output += `**Account Created:** ${accountCreated}\n`;
         }
         output += `**Last Played:** ${new Date(profileData.dateLastPlayed).toLocaleString()}\n`;
-        
+
         // Add triumph score if available
         const records = profile.profileRecords?.data;
         if (records) {
@@ -477,7 +529,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           output += `**Lifetime Score:** ${records.lifetimeScore?.toLocaleString() || 'N/A'}\n`;
           output += `**Legacy Score:** ${records.legacyScore?.toLocaleString() || 'N/A'}\n`;
         }
-        
+
         // Add clan info if available
         if (clanData?.results && clanData.results.length > 0) {
           const clan = clanData.results[0];
@@ -485,7 +537,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           const clanName = clan.group.name;
           const memberCount = clan.group.memberCount;
           const joinDate = new Date(clan.member.joinDate).toLocaleDateString();
-          
+
           output += `\n## Clan\n`;
           output += `**Name:** ${clanName} [${clanTag}]\n`;
           output += `**Members:** ${memberCount}\n`;
@@ -496,7 +548,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         } else {
           output += `\n**Clan:** Not in a clan\n`;
         }
-        
+
         output += '\n';
 
         if (profile.characters?.data) {
@@ -506,7 +558,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             const raceName = getRaceName(char.raceType);
             const genderName = getGenderName(char.genderType);
             const hoursPlayed = Math.round(parseInt(char.minutesPlayedTotal) / 60);
-            
+
             output += `### ${className} (${char.light} Power)\n`;
             output += `- **ID:** ${charId}\n`;
             output += `- **Race/Gender:** ${raceName} ${genderName}\n`;
@@ -520,10 +572,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -541,13 +595,15 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     async ({ membershipType, membershipId, characterId }) => {
       try {
         const result = await client.getCharacter(membershipType, membershipId, characterId);
-        
+
         if (!result.character?.data) {
           return {
-            content: [{
-              type: 'text',
-              text: 'Character data not available',
-            }],
+            content: [
+              {
+                type: 'text',
+                text: 'Character data not available',
+              },
+            ],
           };
         }
 
@@ -575,7 +631,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             '144602215': 'Intellect',
             '4244567218': 'Strength',
           };
-          
+
           for (const [hash, value] of Object.entries(char.stats)) {
             const name = statNames[hash] || hash;
             output += `- **${name}:** ${value}\n`;
@@ -587,10 +643,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching character: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching character: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -619,17 +677,19 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
 
         if (!result.activities || result.activities.length === 0) {
           return {
-            content: [{
-              type: 'text',
-              text: 'No activities found',
-            }],
+            content: [
+              {
+                type: 'text',
+                text: 'No activities found',
+              },
+            ],
           };
         }
 
         // Collect unique activity hashes to resolve names
-        const activityHashes = [...new Set(
-          result.activities.map(a => a.activityDetails.directorActivityHash)
-        )];
+        const activityHashes = [
+          ...new Set(result.activities.map((a) => a.activityDetails.directorActivityHash)),
+        ];
 
         // Resolve activity names in parallel
         const activityNames: Record<number, string> = {};
@@ -648,20 +708,22 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         );
 
         let output = '# Recent Activities\n\n';
-        
+
         for (const activity of result.activities) {
           const date = new Date(activity.period).toLocaleDateString();
           const time = new Date(activity.period).toLocaleTimeString();
           const instanceId = activity.activityDetails.instanceId;
           const activityHash = activity.activityDetails.directorActivityHash;
           const activityName = activityNames[activityHash] || `Unknown (${activityHash})`;
-          const modeName = DestinyActivityModeType[activity.activityDetails.mode] || String(activity.activityDetails.mode);
-          
+          const modeName =
+            DestinyActivityModeType[activity.activityDetails.mode] ||
+            String(activity.activityDetails.mode);
+
           output += `## ${activityName}\n`;
           output += `- **Date:** ${date} ${time}\n`;
           output += `- **Mode:** ${modeName}\n`;
           output += `- **Instance ID:** ${instanceId}\n`;
-          
+
           if (activity.values.completed) {
             output += `- **Completed:** ${activity.values.completed.basic.displayValue}\n`;
           }
@@ -682,10 +744,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching activities: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching activities: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -701,12 +765,15 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     async ({ activityId }) => {
       try {
         const pgcr = await client.getPostGameCarnageReport(activityId);
-        const modeName = DestinyActivityModeType[pgcr.activityDetails.mode] || String(pgcr.activityDetails.mode);
+        const modeName =
+          DestinyActivityModeType[pgcr.activityDetails.mode] || String(pgcr.activityDetails.mode);
 
         // Resolve activity name
         let activityName = 'Unknown Activity';
         try {
-          const activityDef = await client.getActivityDefinition(pgcr.activityDetails.directorActivityHash);
+          const activityDef = await client.getActivityDefinition(
+            pgcr.activityDetails.directorActivityHash
+          );
           const displayProps = activityDef as { displayProperties?: { name?: string } };
           activityName = displayProps.displayProperties?.name || activityName;
         } catch {
@@ -730,16 +797,17 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         output += '## Players\n\n';
         for (const entry of pgcr.entries) {
           const player = entry.player;
-          const displayName = player.destinyUserInfo.bungieGlobalDisplayName || player.destinyUserInfo.displayName;
+          const displayName =
+            player.destinyUserInfo.bungieGlobalDisplayName || player.destinyUserInfo.displayName;
           const displayCode = player.destinyUserInfo.bungieGlobalDisplayNameCode;
           const fullBungieId = displayCode ? `${displayName}#${displayCode}` : displayName;
-          
+
           output += `### ${displayName}\n`;
           output += `- **Bungie ID:** ${fullBungieId}\n`;
           output += `- **Class:** ${player.characterClass || 'Unknown'}\n`;
           output += `- **Light:** ${player.lightLevel}\n`;
           output += `- **Score:** ${entry.score.basic.displayValue}\n`;
-          
+
           if (entry.values.kills) {
             output += `- **Kills:** ${entry.values.kills.basic.displayValue}\n`;
           }
@@ -757,10 +825,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching PGCR: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching PGCR: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -778,7 +848,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         let output = '# Destiny 2 Manifest\n\n';
         output += `**Version:** ${manifest.version}\n\n`;
         output += '## JSON World Content Paths\n\n';
-        
+
         for (const [lang, path] of Object.entries(manifest.jsonWorldContentPaths)) {
           output += `- **${lang}:** https://www.bungie.net${path}\n`;
         }
@@ -788,10 +858,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching manifest: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching manifest: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -814,7 +886,7 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         let output = `# ${definition.displayProperties.name}\n\n`;
         output += `${definition.displayProperties.description}\n\n`;
         output += `**Hash:** ${definition.hash}\n`;
-        
+
         if (definition.displayProperties.icon) {
           output += `**Icon:** https://www.bungie.net${definition.displayProperties.icon}\n`;
         }
@@ -824,10 +896,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching item definition: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching item definition: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -840,24 +914,31 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     {
       membershipType: z.number().describe('Platform type'),
       membershipId: z.string().describe('Destiny membership ID'),
-      characterId: z.string().optional().describe('Character ID (optional, use 0 for account-wide)'),
+      characterId: z
+        .string()
+        .optional()
+        .describe('Character ID (optional, use 0 for account-wide)'),
     },
     async ({ membershipType, membershipId, characterId = '0' }) => {
       try {
         const stats = await client.getHistoricalStats(membershipType, membershipId, characterId);
 
         return {
-          content: [{
-            type: 'text',
-            text: `# Historical Stats\n\n\`\`\`json\n${JSON.stringify(stats, null, 2)}\n\`\`\``,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `# Historical Stats\n\n\`\`\`json\n${JSON.stringify(stats, null, 2)}\n\`\`\``,
+            },
+          ],
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching stats: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching stats: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -868,24 +949,28 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     'search_items',
     'Search for Destiny 2 items by name using the local manifest cache. Returns matching weapons, armor, mods, and other items.',
     {
-      searchTerm: z.string().describe('Name to search for (e.g., "Fatebringer", "Navigator", "Sunshot")'),
+      searchTerm: z
+        .string()
+        .describe('Name to search for (e.g., "Fatebringer", "Navigator", "Sunshot")'),
       limit: z.number().optional().describe('Maximum results to return (default 15)'),
     },
     async ({ searchTerm, limit }) => {
       try {
         const results = manifestCache.searchItems(searchTerm, limit || 15);
-        
+
         if (results.length === 0) {
           return {
-            content: [{
-              type: 'text',
-              text: `No items found matching "${searchTerm}". Try a different search term or partial name.`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `No items found matching "${searchTerm}". Try a different search term or partial name.`,
+              },
+            ],
           };
         }
 
         // Check for multiple versions of same weapon (different hashes, same base name)
-        const weaponResults = results.filter(r => r.itemType === 'Weapon');
+        const weaponResults = results.filter((r) => r.itemType === 'Weapon');
         const baseNames = new Map<string, typeof weaponResults>();
         for (const weapon of weaponResults) {
           // Normalize name (remove "Timelost", "Adept" suffixes for grouping)
@@ -895,16 +980,18 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           }
           baseNames.get(baseName)!.push(weapon);
         }
-        
-        const hasMultipleVersions = Array.from(baseNames.values()).some(group => group.length > 1);
+
+        const hasMultipleVersions = Array.from(baseNames.values()).some(
+          (group) => group.length > 1
+        );
 
         let output = `# Search Results for "${searchTerm}"\n\n`;
         output += `Found ${results.length} item(s):\n\n`;
-        
+
         if (hasMultipleVersions) {
           output += `> **Note:** Multiple versions of some weapons were found. Results are sorted by newest first (highest season number). When a user asks about a weapon without specifying a version, use the first/newest version unless they mention a specific season or year.\n\n`;
         }
-        
+
         for (const item of results) {
           output += `## ${item.name}\n`;
           output += `- **Hash:** ${item.hash}\n`;
@@ -932,10 +1019,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return {
-          content: [{
-            type: 'text',
-            text: `Item search failed: ${errorMessage}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Item search failed: ${errorMessage}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -947,23 +1036,28 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     'Get the icon or screenshot for a Destiny 2 item. By default returns the large screenshot if available, or falls back to the small icon. Use imageType parameter to choose.',
     {
       itemHash: DestinyHashSchema.describe('Item hash from search_items (0-4294967295)'),
-      imageType: z.enum(['screenshot', 'icon', 'auto']).optional().describe('Type of image: "screenshot" (large inspect image), "icon" (small inventory icon), or "auto" (screenshot if available, else icon). Default: auto'),
+      imageType: z
+        .enum(['screenshot', 'icon', 'auto'])
+        .optional()
+        .describe(
+          'Type of image: "screenshot" (large inspect image), "icon" (small inventory icon), or "auto" (screenshot if available, else icon). Default: auto'
+        ),
     },
     async ({ itemHash, imageType = 'auto' }) => {
       try {
-        const itemDef = await client.getItemDefinitionFull(itemHash) as {
+        const itemDef = (await client.getItemDefinitionFull(itemHash)) as {
           displayProperties?: { name?: string; icon?: string };
           screenshot?: string;
         };
-        
+
         const icon = itemDef.displayProperties?.icon;
         const screenshot = itemDef.screenshot; // Screenshot is at root level, not under displayProperties
         const name = itemDef.displayProperties?.name || 'Unknown Item';
-        
+
         // Determine which image to use based on imageType
         let selectedImage: string | undefined;
         let imageLabel: string;
-        
+
         if (imageType === 'screenshot') {
           selectedImage = screenshot;
           imageLabel = 'Screenshot';
@@ -975,33 +1069,37 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           selectedImage = screenshot || icon;
           imageLabel = screenshot ? 'Screenshot' : 'Icon';
         }
-        
+
         if (!selectedImage) {
           return {
-            content: [{
-              type: 'text',
-              text: `No ${imageType === 'auto' ? 'image' : imageType} available for item ${itemHash} (${name})`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `No ${imageType === 'auto' ? 'image' : imageType} available for item ${itemHash} (${name})`,
+              },
+            ],
           };
         }
 
         // Fetch the image and return as base64
         const imageUrl = `https://www.bungie.net${selectedImage}`;
         const response = await fetch(imageUrl);
-        
+
         if (!response.ok) {
           return {
-            content: [{
-              type: 'text',
-              text: `# ${name}\n\n**Icon URL:** https://www.bungie.net${icon}\n${screenshot ? `**Screenshot URL:** https://www.bungie.net${screenshot}` : ''}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `# ${name}\n\n**Icon URL:** https://www.bungie.net${icon}\n${screenshot ? `**Screenshot URL:** https://www.bungie.net${screenshot}` : ''}`,
+              },
+            ],
           };
         }
 
         const arrayBuffer = await response.arrayBuffer();
         const base64 = Buffer.from(arrayBuffer).toString('base64');
         const serverMimeType = response.headers.get('content-type') || 'image/png';
-        
+
         // Validate MIME type (Bungie serves jpg/png)
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         const mimeType = allowedTypes.includes(serverMimeType) ? serverMimeType : 'image/png';
@@ -1021,10 +1119,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching image: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -1039,11 +1139,13 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     },
     async ({ itemHash }) => {
       try {
-        const itemDef = await client.getItemDefinitionFull(itemHash) as Record<string, unknown>;
-        const displayProps = itemDef.displayProperties as { name?: string; description?: string; icon?: string } | undefined;
+        const itemDef = (await client.getItemDefinitionFull(itemHash)) as Record<string, unknown>;
+        const displayProps = itemDef.displayProperties as
+          | { name?: string; description?: string; icon?: string }
+          | undefined;
         const itemType = itemDef.itemTypeDisplayName as string | undefined;
         const tierType = itemDef.inventory as { tierTypeName?: string } | undefined;
-        
+
         let output = `# ${displayProps?.name || 'Unknown Item'}\n\n`;
         output += `**Hash:** ${itemHash}\n`;
         output += `**Type:** ${itemType || 'Unknown'}\n`;
@@ -1057,22 +1159,24 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         output += '\n';
 
         // Handle sockets (perks)
-        const sockets = itemDef.sockets as { 
-          socketEntries?: Array<{
-            socketTypeHash: number;
-            singleInitialItemHash: number;
-            reusablePlugSetHash?: number;
-            randomizedPlugSetHash?: number;
-          }>;
-          socketCategories?: Array<{
-            socketCategoryHash: number;
-            socketIndexes: number[];
-          }>;
-        } | undefined;
+        const sockets = itemDef.sockets as
+          | {
+              socketEntries?: Array<{
+                socketTypeHash: number;
+                singleInitialItemHash: number;
+                reusablePlugSetHash?: number;
+                randomizedPlugSetHash?: number;
+              }>;
+              socketCategories?: Array<{
+                socketCategoryHash: number;
+                socketIndexes: number[];
+              }>;
+            }
+          | undefined;
 
         if (sockets?.socketEntries && sockets.socketEntries.length > 0) {
           output += '## Sockets/Perks\n\n';
-          
+
           // Collect all plug set hashes to resolve
           const plugSetHashes: number[] = [];
           for (const socket of sockets.socketEntries) {
@@ -1087,18 +1191,18 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             3, // Max 3 concurrent plug set lookups
             async (hash) => {
               try {
-                const plugSetDef = await client.getPlugSetDefinition(hash) as {
+                const plugSetDef = (await client.getPlugSetDefinition(hash)) as {
                   reusablePlugItems?: Array<{ plugItemHash: number }>;
                 };
                 const plugItems = plugSetDef.reusablePlugItems || [];
-                
+
                 // Resolve each perk name with bounded concurrency
                 const perks = await batchExecute(
                   plugItems.slice(0, 20), // Limit to 20 perks per socket
                   5, // Max 5 concurrent perk lookups per set
                   async (plug) => {
                     try {
-                      const perkDef = await client.getItemDefinitionFull(plug.plugItemHash) as {
+                      const perkDef = (await client.getItemDefinitionFull(plug.plugItemHash)) as {
                         displayProperties?: { name?: string };
                       };
                       return {
@@ -1136,10 +1240,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching item: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching item: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -1150,17 +1256,19 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     'get_plug_set',
     'Get all perks in a plug set with resolved names - use plugSetHash from item sockets',
     {
-      plugSetHash: DestinyHashSchema.describe('Plug set hash from item socket definition (0-4294967295)'),
+      plugSetHash: DestinyHashSchema.describe(
+        'Plug set hash from item socket definition (0-4294967295)'
+      ),
     },
     async ({ plugSetHash }) => {
       try {
-        const plugSetDef = await client.getPlugSetDefinition(plugSetHash) as {
+        const plugSetDef = (await client.getPlugSetDefinition(plugSetHash)) as {
           reusablePlugItems?: Array<{ plugItemHash: number }>;
           displayProperties?: { name?: string; description?: string };
         };
-        
+
         let output = `# Plug Set ${plugSetHash}\n\n`;
-        
+
         if (plugSetDef.displayProperties?.name) {
           output += `**Name:** ${plugSetDef.displayProperties.name}\n`;
         }
@@ -1170,14 +1278,14 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         output += '\n## Available Perks\n\n';
 
         const plugItems = plugSetDef.reusablePlugItems || [];
-        
+
         // Resolve perk names with bounded concurrency
         const perks = await batchExecute(
           plugItems,
           5, // Max 5 concurrent perk lookups
           async (plug) => {
             try {
-              const perkDef = await client.getItemDefinitionFull(plug.plugItemHash) as {
+              const perkDef = (await client.getItemDefinitionFull(plug.plugItemHash)) as {
                 displayProperties?: { name?: string; description?: string };
               };
               return {
@@ -1205,10 +1313,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching plug set: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching plug set: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -1219,11 +1329,13 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
     'get_activity_definition',
     'Get details about an activity by hash with resolved name (raids, strikes, dungeons, etc.)',
     {
-      activityHash: DestinyHashSchema.describe('Activity hash from activity history (0-4294967295)'),
+      activityHash: DestinyHashSchema.describe(
+        'Activity hash from activity history (0-4294967295)'
+      ),
     },
     async ({ activityHash }) => {
       try {
-        const activityDef = await client.getActivityDefinition(activityHash) as {
+        const activityDef = (await client.getActivityDefinition(activityHash)) as {
           displayProperties?: { name?: string; description?: string; icon?: string };
           destinationHash?: number;
           placeHash?: number;
@@ -1235,9 +1347,9 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           tier?: number;
           pgcrImage?: string;
         };
-        
+
         const displayProps = activityDef.displayProperties;
-        
+
         let output = `# ${displayProps?.name || 'Unknown Activity'}\n\n`;
         output += `**Hash:** ${activityHash}\n`;
         if (displayProps?.description) {
@@ -1247,7 +1359,9 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           output += `**Tier:** ${activityDef.tier}\n`;
         }
         if (activityDef.directActivityModeType !== undefined) {
-          const modeName = DestinyActivityModeType[activityDef.directActivityModeType] || String(activityDef.directActivityModeType);
+          const modeName =
+            DestinyActivityModeType[activityDef.directActivityModeType] ||
+            String(activityDef.directActivityModeType);
           output += `**Mode:** ${modeName}\n`;
         }
         if (displayProps?.icon) {
@@ -1256,16 +1370,18 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         if (activityDef.pgcrImage) {
           output += `**Image:** https://www.bungie.net${activityDef.pgcrImage}\n`;
         }
-        
+
         return {
           content: [{ type: 'text', text: output }],
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error fetching activity: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching activity: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -1274,14 +1390,36 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
 
   server.tool(
     'search_clan_members',
-    'Get the full roster of a Destiny 2 clan. Two methods: 1) Search by clan name/tag (may fail with special Unicode characters), or 2) RECOMMENDED: Use knownMember with any clan member\'s ID to reliably get the roster. Workflow: First use find_players to get a known member\'s ID, then use that ID with knownMember parameter. Returns member list with online status indicators. IMPORTANT: Use the player\'s PRIMARY/CROSS-SAVE platform (usually Steam or PlayStation), NOT secondary platforms.',
+    "Get the full roster of a Destiny 2 clan. Two methods: 1) Search by clan name/tag (may fail with special Unicode characters), or 2) RECOMMENDED: Use knownMember with any clan member's ID to reliably get the roster. Workflow: First use find_players to get a known member's ID, then use that ID with knownMember parameter. Returns member list with online status indicators. IMPORTANT: Use the player's PRIMARY/CROSS-SAVE platform (usually Steam or PlayStation), NOT secondary platforms.",
     {
-      clanName: z.string().optional().describe('Clan name or tag to search for (e.g., "Elysium", "MATH", "B"). May fail with clans that have special Unicode characters. Optional if using knownMember.'),
-      knownMember: z.object({
-        membershipType: z.number().describe('Platform type (1=Xbox, 2=PS, 3=Steam, 6=Epic). MUST use player\'s PRIMARY/CROSS-SAVE platform - clan membership is tied to their main platform, not secondary accounts.'),
-        membershipId: z.string().describe('Destiny membership ID of ANY player in the target clan from their PRIMARY platform. Get this from find_players results - look for Steam (3) or PlayStation (2) first, as these are most commonly the cross-save primary.'),
-      }).optional().describe('RECOMMENDED METHOD: Provide any clan member\'s PRIMARY platform to get the full clan roster. More reliable than name search, especially for elite clans with special characters in names. Example: Use find_players to find "Datto", extract his Steam ID (4611686018467284386) with membershipType 3, then use {membershipType:3, membershipId:"4611686018467284386"} to get Math Class roster. If you get "not in clan" error, try a different platform from find_players results.'),
-      maxResults: z.number().optional().default(50).describe('Maximum number of members to return (default: 50, max: 100)'),
+      clanName: z
+        .string()
+        .optional()
+        .describe(
+          'Clan name or tag to search for (e.g., "Elysium", "MATH", "B"). May fail with clans that have special Unicode characters. Optional if using knownMember.'
+        ),
+      knownMember: z
+        .object({
+          membershipType: z
+            .number()
+            .describe(
+              "Platform type (1=Xbox, 2=PS, 3=Steam, 6=Epic). MUST use player's PRIMARY/CROSS-SAVE platform - clan membership is tied to their main platform, not secondary accounts."
+            ),
+          membershipId: z
+            .string()
+            .describe(
+              'Destiny membership ID of ANY player in the target clan from their PRIMARY platform. Get this from find_players results - look for Steam (3) or PlayStation (2) first, as these are most commonly the cross-save primary.'
+            ),
+        })
+        .optional()
+        .describe(
+          'RECOMMENDED METHOD: Provide any clan member\'s PRIMARY platform to get the full clan roster. More reliable than name search, especially for elite clans with special characters in names. Example: Use find_players to find "Datto", extract his Steam ID (4611686018467284386) with membershipType 3, then use {membershipType:3, membershipId:"4611686018467284386"} to get Math Class roster. If you get "not in clan" error, try a different platform from find_players results.'
+        ),
+      maxResults: z
+        .number()
+        .optional()
+        .default(50)
+        .describe('Maximum number of members to return (default: 50, max: 100)'),
     },
     async ({ clanName, knownMember, maxResults = 50 }) => {
       try {
@@ -1290,16 +1428,21 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
 
         // Method 1: Get clan via known member (most reliable)
         if (knownMember) {
-          const clanData = await client.getGroupsForMember(knownMember.membershipType, knownMember.membershipId);
+          const clanData = await client.getGroupsForMember(
+            knownMember.membershipType,
+            knownMember.membershipId
+          );
           if (!clanData.results || clanData.results.length === 0) {
             return {
-              content: [{
-                type: 'text',
-                text: `The specified player is not in any clan.`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `The specified player is not in any clan.`,
+                },
+              ],
             };
           }
-          
+
           const clan = clanData.results[0];
           groupId = clan.group.groupId;
           clanInfo = {
@@ -1313,11 +1456,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
         else if (clanName) {
           // First check if we have a hard-coded groupId for this elite clan
           const lowerQuery = clanName.toLowerCase();
-          const eliteClan = ELITE_CLANS.find(c => 
-            c.tag.toLowerCase() === lowerQuery ||
-            (c.notes && c.notes.toLowerCase().includes(lowerQuery))
+          const eliteClan = ELITE_CLANS.find(
+            (c) =>
+              c.tag.toLowerCase() === lowerQuery ||
+              (c.notes && c.notes.toLowerCase().includes(lowerQuery))
           );
-          
+
           if (eliteClan?.groupId) {
             // Use the hard-coded group ID directly!
             groupId = eliteClan.groupId;
@@ -1334,10 +1478,12 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
               };
             } else {
               return {
-                content: [{
-                  type: 'text',
-                  text: `Found elite clan ${eliteClan.notes}, but roster is unavailable.`,
-                }],
+                content: [
+                  {
+                    type: 'text',
+                    text: `Found elite clan ${eliteClan.notes}, but roster is unavailable.`,
+                  },
+                ],
               };
             }
           } else {
@@ -1348,32 +1494,41 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
             } catch {
               searchResults = { results: [] };
             }
-            
+
             if (!searchResults.results || searchResults.results.length === 0) {
               // Fuzzy match against known elite clans as fallback
-              const eliteMatches = ELITE_CLANS.filter(c => 
-                c.tag.toLowerCase().includes(lowerQuery) ||
-                (c.notes && c.notes.toLowerCase().includes(lowerQuery))
+              const eliteMatches = ELITE_CLANS.filter(
+                (c) =>
+                  c.tag.toLowerCase().includes(lowerQuery) ||
+                  (c.notes && c.notes.toLowerCase().includes(lowerQuery))
               );
-              
+
               if (eliteMatches.length > 0) {
-                const suggestions = eliteMatches.slice(0, 3).map(c => 
-                  `- ${c.notes} (tag: [${c.tag}])${c.groupId ? ' ✓ Direct lookup available' : ''}`
-                ).join('\n');
-                
+                const suggestions = eliteMatches
+                  .slice(0, 3)
+                  .map(
+                    (c) =>
+                      `- ${c.notes} (tag: [${c.tag}])${c.groupId ? ' ✓ Direct lookup available' : ''}`
+                  )
+                  .join('\n');
+
                 return {
-                  content: [{
-                    type: 'text',
-                    text: `Bungie API couldn't find "${clanName}", but it matches these elite clans:\n\n${suggestions}\n\nTo get the roster, use find_players to find a member of that clan, then use the knownMember parameter with their Steam/PlayStation ID.`,
-                  }],
+                  content: [
+                    {
+                      type: 'text',
+                      text: `Bungie API couldn't find "${clanName}", but it matches these elite clans:\n\n${suggestions}\n\nTo get the roster, use find_players to find a member of that clan, then use the knownMember parameter with their Steam/PlayStation ID.`,
+                    },
+                  ],
                 };
               }
-              
+
               return {
-                content: [{
-                  type: 'text',
-                  text: `No clan found matching "${clanName}". The Bungie API clan search is very strict and often fails with special characters or partial names.\n\nRECOMMENDED: Use find_players to find any member of the clan, then use the knownMember parameter with their Steam (3) or PlayStation (2) membership ID.`,
-                }],
+                content: [
+                  {
+                    type: 'text',
+                    text: `No clan found matching "${clanName}". The Bungie API clan search is very strict and often fails with special characters or partial names.\n\nRECOMMENDED: Use find_players to find any member of the clan, then use the knownMember parameter with their Steam (3) or PlayStation (2) membership ID.`,
+                  },
+                ],
               };
             }
 
@@ -1388,14 +1543,16 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
           }
         } else {
           return {
-            content: [{
-              type: 'text',
-              text: 'Must provide either clanName or knownMember parameter.',
-            }],
+            content: [
+              {
+                type: 'text',
+                text: 'Must provide either clanName or knownMember parameter.',
+              },
+            ],
             isError: true,
           };
         }
-        
+
         // Get clan members
         const membersResponse = await client.getGroupMembers(groupId, 1);
         const allMembers = membersResponse.results || [];
@@ -1403,36 +1560,45 @@ export function registerTools(server: McpServer, client: BungieApiClient, manife
 
         if (allMembers.length === 0) {
           return {
-            content: [{
-              type: 'text',
-              text: `Clan "${clanInfo.name}" [${clanInfo.tag}] has no members`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Clan "${clanInfo.name}" [${clanInfo.tag}] has no members`,
+              },
+            ],
           };
         }
 
-        const memberList = displayMembers.map(m => {
-          const info = m.destinyUserInfo;
-          const status = m.isOnline ? '🟢' : '⚫';
-          const platform = getMembershipTypeName(info.membershipType);
-          return `${status} ${info.bungieGlobalDisplayName}#${info.bungieGlobalDisplayNameCode} (${platform})`;
-        }).join('\n');
+        const memberList = displayMembers
+          .map((m) => {
+            const info = m.destinyUserInfo;
+            const status = m.isOnline ? '🟢' : '⚫';
+            const platform = getMembershipTypeName(info.membershipType);
+            return `${status} ${info.bungieGlobalDisplayName}#${info.bungieGlobalDisplayNameCode} (${platform})`;
+          })
+          .join('\n');
 
-        const moreText = membersResponse.totalResults > maxResults 
-          ? `\n\n... and ${membersResponse.totalResults - maxResults} more members (use higher maxResults to see all)` 
-          : '';
+        const moreText =
+          membersResponse.totalResults > maxResults
+            ? `\n\n... and ${membersResponse.totalResults - maxResults} more members (use higher maxResults to see all)`
+            : '';
 
         return {
-          content: [{
-            type: 'text',
-            text: `# Clan: ${clanInfo.name} [${clanInfo.tag}]\n\n**Total Members:** ${membersResponse.totalResults}\n**Motto:** ${clanInfo.motto || 'None'}\n\n## Member List (${displayMembers.length} shown):\n${memberList}${moreText}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `# Clan: ${clanInfo.name} [${clanInfo.tag}]\n\n**Total Members:** ${membersResponse.totalResults}\n**Motto:** ${clanInfo.motto || 'None'}\n\n## Member List (${displayMembers.length} shown):\n${memberList}${moreText}`,
+            },
+          ],
         };
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error searching clan members: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error searching clan members: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
           isError: true,
         };
       }

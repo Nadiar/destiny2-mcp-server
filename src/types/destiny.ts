@@ -301,13 +301,16 @@ export interface DestinyActivityHistoryEntry {
     isPrivate: boolean;
     membershipType: BungieMembershipType;
   };
-  values: Record<string, {
-    statId: string;
-    basic: {
-      value: number;
-      displayValue: string;
-    };
-  }>;
+  values: Record<
+    string,
+    {
+      statId: string;
+      basic: {
+        value: number;
+        displayValue: string;
+      };
+    }
+  >;
 }
 
 // Post-game carnage report
@@ -344,10 +347,13 @@ export interface DestinyPostGameCarnageReportEntry {
     emblemHash: number;
   };
   characterId: string;
-  values: Record<string, {
-    statId: string;
-    basic: { value: number; displayValue: string };
-  }>;
+  values: Record<
+    string,
+    {
+      statId: string;
+      basic: { value: number; displayValue: string };
+    }
+  >;
   extended?: {
     weapons?: Array<{
       referenceId: number;

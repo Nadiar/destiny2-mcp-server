@@ -59,12 +59,12 @@ const WATERMARK_SEASONS: Record<string, { name: string; number: number }> = {
   'e775dcb3d47e3d54e0e24fbdb64b5763.png': { name: 'Season of the Deep', number: 21 },
   'd4141b2247cf999c73d3dc409f9d00f7.png': { name: 'Season of the Witch', number: 22 },
   '0ac354c1c326441716ddb15d2c158c59.png': { name: 'Season of the Wish', number: 23 },
-  
+
   // Episodes (Year 7+)
   '6f17d323d81dd683086d88a9268f8106.png': { name: 'Episode: Echoes', number: 24 },
   'b9620c9768c298515caeb183a3388163.png': { name: 'Episode: Revenant', number: 25 },
   '6129365b4fad6754f2b8c4478fc3c4ac.png': { name: 'Episode: Heresy', number: 26 },
-  
+
   // Expansions
   '50d36366595897d49b5d33e101c8fd07.png': { name: 'The Final Shape', number: 24 },
   'fc31e8ede7cc15908d6e2b39167afbcf.png': { name: 'Lightfall', number: 20 },
@@ -72,7 +72,7 @@ const WATERMARK_SEASONS: Record<string, { name: string; number: number }> = {
   'c1c542d176c85e1e0c8c041f1690c5e4.png': { name: 'Beyond Light', number: 12 },
   '6a52f7cd9099990157c739a8260babea.png': { name: 'Shadowkeep', number: 8 },
   'e10338777d1d8633e073846e613b6c77.png': { name: 'Forsaken', number: 4 },
-  
+
   // Raids & Dungeons
   'bcc26708e314306fb2fc8cb98fcbf47e.png': { name: 'Grasp of Avarice/30th Anniversary', number: 15 },
   'a15754752f40aaf7b1b00aadb70a8f35.png': { name: 'Garden of Salvation', number: 8 },
@@ -82,26 +82,26 @@ const WATERMARK_SEASONS: Record<string, { name: string; number: number }> = {
   '03d000a7f097b6e12012b8c2eab0b1ad.png': { name: 'Root of Nightmares', number: 20 },
   '0d6c3365022ed3b059eac467b076978f.png': { name: "Salvation's Edge", number: 24 },
   '661c84a377389a3b8a1fc38b44189b41.png': { name: 'Vespers Host', number: 25 },
-  
+
   // Iron Banner
   '4f28dc0f39238fe25d298a894ea71389.png': { name: 'Iron Banner', number: 15 },
-  
+
   // Trials of Osiris
   'ae5c7f708a36f754c2f68c65c88ab9aa.png': { name: 'Trials of Osiris', number: 11 },
   'a5e27dc822aa72787f388bd1fc115803.png': { name: 'Trials of Osiris (Reprised)', number: 17 },
   '7d815c943977fe71bbf00caf1bd9c514.png': { name: "King's Fall (Reprised)", number: 17 },
-  
+
   // Crucible/Gambit/Vanguard
   'aeb95eb1abe8e45e1fe2573d6b3ab3c5.png': { name: 'Crucible (Pre-Beyond Light)', number: 7 },
   '2c022e452f395db7b1daec1cb44631fc.png': { name: 'Gambit/Vanguard', number: 4 },
   'b2410a70904ab0b09a716054c83fbcfd.png': { name: 'Vanguard/World', number: 12 },
   '75adde12e4e9c9fb237e492d8258eb73.png': { name: 'Dares of Eternity', number: 15 },
-  
+
   // Events
   '50c3ebe414c6946429934d79504922fa.png': { name: 'Solstice', number: 14 },
   '53dc0b02306726ff1517af33ac908cef.png': { name: 'Festival of the Lost', number: 15 },
   '83fbcacd223402c09af4b7ab067f8cce.png': { name: 'Dawning', number: 12 },
-  
+
   // Legacy/World Drops
   'a0556509f8825756b6b89f59f90528ec.png': { name: 'World Drop (Current)', number: 23 },
   '249813e647271a8227bae0d8a39ed505.png': { name: 'Nightfall', number: 19 },
@@ -163,11 +163,16 @@ export class ManifestCache {
   }
 
   private async getCurrentManifestVersion(): Promise<string> {
-    const response = await this.fetchWithApiKey('https://www.bungie.net/Platform/Destiny2/Manifest/');
+    const response = await this.fetchWithApiKey(
+      'https://www.bungie.net/Platform/Destiny2/Manifest/'
+    );
     if (!response.ok) {
       throw new Error(`Manifest API returned ${response.status}: ${response.statusText}`);
     }
-    const data = await response.json() as { Response?: { version: string }; ErrorStatus?: string };
+    const data = (await response.json()) as {
+      Response?: { version: string };
+      ErrorStatus?: string;
+    };
     if (!data.Response?.version) {
       throw new Error(`Invalid manifest response: ${data.ErrorStatus || 'No Response object'}`);
     }
@@ -188,10 +193,12 @@ export class ManifestCache {
 
   private async downloadManifest(): Promise<void> {
     console.error('[ManifestCache] Downloading item definitions from Bungie...');
-    
+
     // Get manifest paths
-    const manifestResponse = await this.fetchWithApiKey('https://www.bungie.net/Platform/Destiny2/Manifest/');
-    const manifestData = await manifestResponse.json() as {
+    const manifestResponse = await this.fetchWithApiKey(
+      'https://www.bungie.net/Platform/Destiny2/Manifest/'
+    );
+    const manifestData = (await manifestResponse.json()) as {
       Response: {
         version: string;
         jsonWorldComponentContentPaths: {
@@ -204,7 +211,7 @@ export class ManifestCache {
       };
     };
     const paths = manifestData.Response.jsonWorldComponentContentPaths.en;
-    
+
     // Download items, seasons, and collectibles in parallel
     console.error('[ManifestCache] Fetching definitions...');
     const [itemsResponse, seasonsResponse, collectiblesResponse] = await Promise.all([
@@ -212,28 +219,37 @@ export class ManifestCache {
       fetch(`https://www.bungie.net${paths.DestinySeasonDefinition}`),
       fetch(`https://www.bungie.net${paths.DestinyCollectibleDefinition}`),
     ]);
-    
-    const itemsData = await itemsResponse.json() as Record<string, {
-      hash: number;
-      displayProperties: { name: string; description: string; icon?: string };
-      itemType: number;
-      itemSubType: number;
-      inventory?: { tierType: number; tierTypeName?: string };
-      seasonHash?: number;
-      iconWatermark?: string;
-      collectibleHash?: number;
-    }>;
-    
-    const seasonsData = await seasonsResponse.json() as Record<string, {
-      hash: number;
-      seasonNumber?: number;
-      displayProperties: { name: string };
-    }>;
-    
-    const collectiblesData = await collectiblesResponse.json() as Record<string, {
-      hash: number;
-      sourceString?: string;
-    }>;
+
+    const itemsData = (await itemsResponse.json()) as Record<
+      string,
+      {
+        hash: number;
+        displayProperties: { name: string; description: string; icon?: string };
+        itemType: number;
+        itemSubType: number;
+        inventory?: { tierType: number; tierTypeName?: string };
+        seasonHash?: number;
+        iconWatermark?: string;
+        collectibleHash?: number;
+      }
+    >;
+
+    const seasonsData = (await seasonsResponse.json()) as Record<
+      string,
+      {
+        hash: number;
+        seasonNumber?: number;
+        displayProperties: { name: string };
+      }
+    >;
+
+    const collectiblesData = (await collectiblesResponse.json()) as Record<
+      string,
+      {
+        hash: number;
+        sourceString?: string;
+      }
+    >;
 
     // Build seasons lookup with number
     const seasonsLookup: Record<number, { name: string; number?: number }> = {};
@@ -243,7 +259,7 @@ export class ManifestCache {
         number: season.seasonNumber,
       };
     }
-    
+
     // Build collectibles source lookup
     const collectiblesLookup: Record<number, string> = {};
     for (const collectible of Object.values(collectiblesData)) {
@@ -254,7 +270,7 @@ export class ManifestCache {
 
     // Process and store items
     const processedItems: Record<string, ItemDefinition> = {};
-    
+
     for (const [hash, item] of Object.entries(itemsData)) {
       // Only store items with names (skip redacted/unnamed items)
       if (item.displayProperties?.name) {
@@ -279,12 +295,17 @@ export class ManifestCache {
     await writeFile(ITEMS_CACHE_FILE, JSON.stringify(processedItems));
     await writeFile(join(CACHE_DIR, 'seasons.json'), JSON.stringify(seasonsLookup));
     await writeFile(join(CACHE_DIR, 'collectibles.json'), JSON.stringify(collectiblesLookup));
-    await writeFile(MANIFEST_VERSION_FILE, JSON.stringify({
-      version: manifestData.Response.version,
-      downloadedAt: new Date().toISOString(),
-    }));
+    await writeFile(
+      MANIFEST_VERSION_FILE,
+      JSON.stringify({
+        version: manifestData.Response.version,
+        downloadedAt: new Date().toISOString(),
+      })
+    );
 
-    console.error(`[ManifestCache] Cached ${Object.keys(processedItems).length} items, ${Object.keys(seasonsLookup).length} seasons`);
+    console.error(
+      `[ManifestCache] Cached ${Object.keys(processedItems).length} items, ${Object.keys(seasonsLookup).length} seasons`
+    );
   }
 
   private async loadFromCache(): Promise<boolean> {
@@ -292,14 +313,17 @@ export class ManifestCache {
       if (!existsSync(ITEMS_CACHE_FILE)) {
         return false;
       }
-      
+
       const content = await readFile(ITEMS_CACHE_FILE, 'utf-8');
       const items = JSON.parse(content) as Record<string, ItemDefinition>;
-      
+
       // Load seasons and collectibles
       if (existsSync(join(CACHE_DIR, 'seasons.json'))) {
         const seasonsContent = await readFile(join(CACHE_DIR, 'seasons.json'), 'utf-8');
-        const seasons = JSON.parse(seasonsContent) as Record<string, { name: string; number?: number } | string>;
+        const seasons = JSON.parse(seasonsContent) as Record<
+          string,
+          { name: string; number?: number } | string
+        >;
         for (const [hash, data] of Object.entries(seasons)) {
           // Handle both old format (string) and new format (object)
           if (typeof data === 'string') {
@@ -309,7 +333,7 @@ export class ManifestCache {
           }
         }
       }
-      
+
       if (existsSync(join(CACHE_DIR, 'collectibles.json'))) {
         const collectiblesContent = await readFile(join(CACHE_DIR, 'collectibles.json'), 'utf-8');
         const collectibles = JSON.parse(collectiblesContent) as Record<string, string>;
@@ -317,13 +341,13 @@ export class ManifestCache {
           this.collectibles.set(Number(hash), source);
         }
       }
-      
+
       this.items.clear();
       this.itemsByName.clear();
-      
+
       for (const item of Object.values(items)) {
         this.items.set(item.hash, item);
-        
+
         // Index by lowercase name for search
         const lowerName = item.name.toLowerCase();
         if (!this.itemsByName.has(lowerName)) {
@@ -331,7 +355,7 @@ export class ManifestCache {
         }
         this.itemsByName.get(lowerName)!.push(item);
       }
-      
+
       return true;
     } catch {
       return false;
@@ -350,26 +374,33 @@ export class ManifestCache {
     try {
       // Try to check for updates
       const currentVersion = await this.getCurrentManifestVersion();
-      
+
       // Determine if we need to update based on version or TTL
-      const needsUpdate = !cachedVersion || 
+      const needsUpdate =
+        !cachedVersion ||
         cachedVersion.version !== currentVersion ||
         this.isCacheExpired(cachedVersion);
 
       if (needsUpdate) {
-        const reason = !cachedVersion ? 'no cache' :
-          cachedVersion.version !== currentVersion ? 'version mismatch' :
-          'cache expired';
-        console.error(`[ManifestCache] Manifest update needed (${reason}). Current: ${currentVersion}, Cached: ${cachedVersion?.version || 'none'}`);
+        const reason = !cachedVersion
+          ? 'no cache'
+          : cachedVersion.version !== currentVersion
+            ? 'version mismatch'
+            : 'cache expired';
+        console.error(
+          `[ManifestCache] Manifest update needed (${reason}). Current: ${currentVersion}, Cached: ${cachedVersion?.version || 'none'}`
+        );
         await this.downloadManifest();
-        
+
         // Reload from freshly downloaded cache
         const loaded = await this.loadFromCache();
         if (!loaded) {
           throw new Error('Failed to load manifest cache after download');
         }
       } else {
-        console.error(`[ManifestCache] Using cached manifest (version: ${cachedVersion.version}, age: ${this.getCacheAgeString(cachedVersion)})`);
+        console.error(
+          `[ManifestCache] Using cached manifest (version: ${cachedVersion.version}, age: ${this.getCacheAgeString(cachedVersion)})`
+        );
       }
 
       this.initialized = true;
@@ -377,7 +408,10 @@ export class ManifestCache {
     } catch (error) {
       // Graceful degradation: use stale cache if available
       if (hasExistingCache && this.items.size > 0) {
-        console.error(`[ManifestCache] Update failed, using stale cache (${this.items.size} items):`, error);
+        console.error(
+          `[ManifestCache] Update failed, using stale cache (${this.items.size} items):`,
+          error
+        );
         this.initialized = true;
         return;
       }
@@ -461,7 +495,7 @@ export class ManifestCache {
       }
       return season.name;
     }
-    
+
     // Try watermark mapping
     if (item.iconWatermark) {
       const watermarkFile = item.iconWatermark.split('/').pop();
@@ -470,12 +504,12 @@ export class ManifestCache {
         return `${seasonInfo.name} (S${seasonInfo.number})`;
       }
     }
-    
+
     // Try collectible source
     if (item.collectibleHash && this.collectibles.has(item.collectibleHash)) {
       return this.collectibles.get(item.collectibleHash);
     }
-    
+
     return undefined;
   }
 
@@ -526,7 +560,7 @@ export class ManifestCache {
       for (const item of this.items.values()) {
         if (results.length >= limit) break;
         if (seen.has(item.hash)) continue;
-        
+
         if (item.name.toLowerCase().includes(lowerQuery)) {
           seen.add(item.hash);
           results.push({
@@ -551,7 +585,7 @@ export class ManifestCache {
       const bTypeIndex = typeOrder.indexOf(b.itemType);
       const aTypePriority = aTypeIndex === -1 ? 999 : aTypeIndex;
       const bTypePriority = bTypeIndex === -1 ? 999 : bTypeIndex;
-      
+
       if (aTypePriority !== bTypePriority) {
         return aTypePriority - bTypePriority;
       }
@@ -562,7 +596,7 @@ export class ManifestCache {
       const bTierIndex = tierOrder.indexOf(b.tierType);
       const aTierPriority = aTierIndex === -1 ? 999 : aTierIndex;
       const bTierPriority = bTierIndex === -1 ? 999 : bTierIndex;
-      
+
       if (aTierPriority !== bTierPriority) {
         return aTierPriority - bTierPriority;
       }

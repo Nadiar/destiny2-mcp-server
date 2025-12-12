@@ -70,7 +70,7 @@ describe('BungieApiClient', () => {
       });
 
       await client.getManifest();
-      
+
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
@@ -88,7 +88,7 @@ describe('BungieApiClient', () => {
         status: 429,
         statusText: 'Too Many Requests',
       });
-      
+
       // Second call succeeds
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -112,7 +112,7 @@ describe('BungieApiClient', () => {
         status: 500,
         statusText: 'Internal Server Error',
       });
-      
+
       // Second call succeeds
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -166,8 +166,10 @@ describe('BungieApiClient', () => {
         maxRetries: 0, // Disable retries to speed up test
         rateLimitMs: 10,
       });
-      
-      mockFetch.mockRejectedValueOnce(new Error('Connection failed for test1234567890abcdef1234567890ab'));
+
+      mockFetch.mockRejectedValueOnce(
+        new Error('Connection failed for test1234567890abcdef1234567890ab')
+      );
 
       try {
         await clientWithKey.getManifest();

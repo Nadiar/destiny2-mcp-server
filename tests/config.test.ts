@@ -3,7 +3,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { validateConfig, loadConfig, isValidApiKeyFormat, getConfigHelp, clearConfigCache } from '../src/config.js';
+import {
+  validateConfig,
+  loadConfig,
+  isValidApiKeyFormat,
+  getConfigHelp,
+  clearConfigCache,
+} from '../src/config.js';
 
 describe('Config Module', () => {
   beforeEach(() => {
@@ -50,7 +56,7 @@ describe('Config Module', () => {
       const result = validateConfig(env);
       expect(result.success).toBe(false);
       expect(result.errors).toBeDefined();
-      expect(result.errors!.some(e => e.path === 'BUNGIE_API_KEY')).toBe(true);
+      expect(result.errors!.some((e) => e.path === 'BUNGIE_API_KEY')).toBe(true);
     });
 
     it('should fail when BUNGIE_API_KEY format is invalid', () => {
@@ -60,7 +66,7 @@ describe('Config Module', () => {
 
       const result = validateConfig(env);
       expect(result.success).toBe(false);
-      expect(result.errors!.some(e => e.path === 'BUNGIE_API_KEY')).toBe(true);
+      expect(result.errors!.some((e) => e.path === 'BUNGIE_API_KEY')).toBe(true);
     });
 
     it('should fail when LOG_LEVEL is invalid', () => {
@@ -71,7 +77,7 @@ describe('Config Module', () => {
 
       const result = validateConfig(env);
       expect(result.success).toBe(false);
-      expect(result.errors!.some(e => e.path === 'LOG_LEVEL')).toBe(true);
+      expect(result.errors!.some((e) => e.path === 'LOG_LEVEL')).toBe(true);
     });
 
     it('should validate CACHE_TTL_HOURS range', () => {

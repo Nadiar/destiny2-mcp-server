@@ -26,10 +26,7 @@ const EnvSchema = z.object({
     .describe('Bungie API key from https://www.bungie.net/en/Application'),
 
   // Optional with defaults
-  LOG_LEVEL: z
-    .enum(['debug', 'info', 'warn', 'error'])
-    .default('info')
-    .describe('Logging level'),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info').describe('Logging level'),
 
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
@@ -40,18 +37,18 @@ const EnvSchema = z.object({
   CACHE_TTL_HOURS: numericEnvVar(1, 168, '24') // 1 hour to 1 week
     .describe('Manifest cache TTL in hours'),
 
-  CACHE_MAX_SIZE_MB: numericEnvVar(50, 500, '100')
-    .describe('Maximum cache size in megabytes'),
+  CACHE_MAX_SIZE_MB: numericEnvVar(50, 500, '100').describe('Maximum cache size in megabytes'),
 
   // API configuration
-  API_RATE_LIMIT_MS: numericEnvVar(50, 1000, '150')
-    .describe('Minimum milliseconds between API requests'),
+  API_RATE_LIMIT_MS: numericEnvVar(50, 1000, '150').describe(
+    'Minimum milliseconds between API requests'
+  ),
 
-  API_MAX_RETRIES: numericEnvVar(0, 5, '3')
-    .describe('Maximum number of API retry attempts'),
+  API_MAX_RETRIES: numericEnvVar(0, 5, '3').describe('Maximum number of API retry attempts'),
 
-  API_TIMEOUT_MS: numericEnvVar(5000, 60000, '30000')
-    .describe('API request timeout in milliseconds'),
+  API_TIMEOUT_MS: numericEnvVar(5000, 60000, '30000').describe(
+    'API request timeout in milliseconds'
+  ),
 });
 
 /**
@@ -76,7 +73,9 @@ export interface ConfigValidationResult {
  * @param env - Environment variables (defaults to process.env)
  * @returns Validation result with config or errors
  */
-export function validateConfig(env: Record<string, string | undefined> = process.env): ConfigValidationResult {
+export function validateConfig(
+  env: Record<string, string | undefined> = process.env
+): ConfigValidationResult {
   const result = EnvSchema.safeParse(env);
 
   if (result.success) {

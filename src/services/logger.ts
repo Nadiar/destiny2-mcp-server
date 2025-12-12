@@ -16,22 +16,22 @@ function shouldLog(level: LogLevel): boolean {
 function sanitize(msg: unknown): string {
   const text = typeof msg === 'string' ? msg : JSON.stringify(msg);
   const apiKey = process.env.BUNGIE_API_KEY;
-  
+
   let sanitized = text;
-  
+
   // Replace actual API key value if present and long enough to be safe
   if (apiKey && apiKey.length > 8) {
     const keyRegex = new RegExp(apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
     sanitized = sanitized.replace(keyRegex, '***REDACTED***');
   }
-  
+
   // Sanitize common patterns
   sanitized = sanitized
-    .replace(/(BUNGIE_API_KEY=)[^\s&]+/g, '$1***')                    // env var
+    .replace(/(BUNGIE_API_KEY=)[^\s&]+/g, '$1***') // env var
     .replace(/(["']apiKey["']\s*:\s*["'])[^"']+(["'])/g, '$1***$2') // JSON key
-    .replace(/(X-API-Key:\s*)[^\s,}]+/g, '$1***')                     // HTTP header
-    .replace(/([?&]api[_-]?key=)[^&\s]+/g, '$1***');                  // URL param
-  
+    .replace(/(X-API-Key:\s*)[^\s,}]+/g, '$1***') // HTTP header
+    .replace(/([?&]api[_-]?key=)[^&\s]+/g, '$1***'); // URL param
+
   return sanitized;
 }
 

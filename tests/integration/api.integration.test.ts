@@ -1,9 +1,9 @@
 /**
  * Integration tests for Bungie API
- * 
+ *
  * These tests make REAL API calls to Bungie's servers.
  * Run with: npm run test:integration
- * 
+ *
  * Requirements:
  * - A valid .env file with BUNGIE_API_KEY
  * - Internet connection
@@ -32,11 +32,11 @@ describeIntegration('Bungie API Integration Tests', () => {
   describe('Manifest', () => {
     it('should fetch the current manifest', async () => {
       const manifest = await client.getManifest();
-      
+
       expect(manifest).toBeDefined();
       expect(manifest.version).toBeDefined();
       expect(typeof manifest.version).toBe('string');
-      
+
       console.log(`  📦 Manifest version: ${manifest.version}`);
     });
   });
@@ -45,10 +45,10 @@ describeIntegration('Bungie API Integration Tests', () => {
     it('should get activity definition by hash', async () => {
       // A well-known raid activity hash (Crota's End)
       const activityHash = 4179289725;
-      
+
       try {
         const activity = await client.getActivityDefinition(activityHash);
-        
+
         expect(activity).toBeDefined();
         console.log(`  🎮 Activity retrieved successfully`);
       } catch {
@@ -63,10 +63,10 @@ describeIntegration('Bungie API Integration Tests', () => {
     it('should get item definition by hash', async () => {
       // Gjallarhorn hash
       const gjallyHash = 1363886209;
-      
+
       try {
         const item = await client.getItemDefinitionFull(gjallyHash);
-        
+
         expect(item).toBeDefined();
         console.log(`  📋 Item retrieved successfully`);
       } catch {
@@ -79,15 +79,17 @@ describeIntegration('Bungie API Integration Tests', () => {
 
   describe('Rate Limiting', () => {
     it('should handle multiple rapid requests gracefully', async () => {
-      const requests = Array(5).fill(null).map(() => client.getManifest());
-      
+      const requests = Array(5)
+        .fill(null)
+        .map(() => client.getManifest());
+
       const results = await Promise.all(requests);
-      
+
       expect(results).toHaveLength(5);
-      results.forEach(manifest => {
+      results.forEach((manifest) => {
         expect(manifest.version).toBeDefined();
       });
-      
+
       console.log('  ✅ Successfully handled 5 concurrent requests');
     });
   });

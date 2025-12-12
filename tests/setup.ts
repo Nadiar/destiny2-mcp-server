@@ -1,7 +1,7 @@
 /**
  * Vitest global setup file
  * Sets up mocks and test environment
- * 
+ *
  * For unit tests: Uses fake API key (default)
  * For integration tests: Set INTEGRATION_TEST=true to load .env
  */
@@ -20,13 +20,18 @@ let hasValidApiKey = false;
 if (isIntegrationTest) {
   const envPath = resolve(process.cwd(), '.env');
   const result = config({ path: envPath });
-  
-  if (!result.error && process.env.BUNGIE_API_KEY && 
-      process.env.BUNGIE_API_KEY !== 'test1234567890abcdef1234567890ab') {
+
+  if (
+    !result.error &&
+    process.env.BUNGIE_API_KEY &&
+    process.env.BUNGIE_API_KEY !== 'test1234567890abcdef1234567890ab'
+  ) {
     hasValidApiKey = true;
     console.log('\n✅ Integration test mode: Using real API key from .env\n');
   } else {
-    console.warn('\n⚠️  Integration test mode enabled but .env file not found or BUNGIE_API_KEY not set.');
+    console.warn(
+      '\n⚠️  Integration test mode enabled but .env file not found or BUNGIE_API_KEY not set.'
+    );
     console.warn('   Create a .env file with your real BUNGIE_API_KEY to run integration tests.');
     console.warn('   Falling back to mock API key.\n');
     process.env.BUNGIE_API_KEY = 'test1234567890abcdef1234567890ab';

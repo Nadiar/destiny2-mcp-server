@@ -33,7 +33,9 @@ try {
 // Additional format check with warning (non-blocking)
 if (!isValidApiKeyFormat(config.BUNGIE_API_KEY)) {
   logger.warn('API key format appears invalid (expected 32 hex characters)');
-  logger.warn('Key may still work if Bungie changed format, but verify at: https://www.bungie.net/en/Application');
+  logger.warn(
+    'Key may still work if Bungie changed format, but verify at: https://www.bungie.net/en/Application'
+  );
 }
 
 // Create the MCP server
@@ -64,11 +66,12 @@ server.prompt(
   'How to find what perks can roll on a weapon',
   { weaponName: z.string().optional().describe('Weapon name to look up') },
   ({ weaponName }) => ({
-    messages: [{
-      role: 'user',
-      content: {
-        type: 'text',
-        text: `To find perks for ${weaponName || 'a weapon'}:
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `To find perks for ${weaponName || 'a weapon'}:
 
 1. Find the weapon's hash on light.gg or d2gunsmith.com (the number in the URL)
 2. Use get_item_details with that hash to see all possible perks with names
@@ -79,25 +82,27 @@ Common weapon hashes:
 - Fatebringer: 2171478765
 - The Navigator: 1536541570  
 - Conditional Finality: 1716319596
-- Cloudstrike: 1193238894`
-      }
-    }]
+- Cloudstrike: 1193238894`,
+        },
+      },
+    ],
   })
 );
 
 server.prompt(
-  'activity_count_lookup', 
+  'activity_count_lookup',
   'How to count activity completions for a player',
-  { 
+  {
     activityName: z.string().optional().describe('Activity name'),
-    bungieName: z.string().optional().describe('Player Bungie Name')
+    bungieName: z.string().optional().describe('Player Bungie Name'),
   },
   ({ activityName, bungieName }) => ({
-    messages: [{
-      role: 'user',
-      content: {
-        type: 'text',
-        text: `To count how many times ${bungieName || 'a player'} has run ${activityName || 'an activity'}:
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `To count how many times ${bungieName || 'a player'} has run ${activityName || 'an activity'}:
 
 1. Use search_player with their Bungie Name (format: "Name#1234") to get membershipType and membershipId
 2. Use get_profile to get their character IDs
@@ -107,9 +112,10 @@ server.prompt(
    - Paginate through results until you reach the desired start date
 4. Match activities by looking up directorActivityHash with get_item_definition
 5. Count completions (where values.completed.basic.value === 1)
-6. Deduplicate across characters using instanceId`
-      }
-    }]
+6. Deduplicate across characters using instanceId`,
+        },
+      },
+    ],
   })
 );
 
@@ -118,11 +124,12 @@ server.prompt(
   'How to look up a Destiny 2 player',
   { bungieName: z.string().optional().describe('Player Bungie Name') },
   ({ bungieName }) => ({
-    messages: [{
-      role: 'user',
-      content: {
-        type: 'text',
-        text: `To look up ${bungieName || 'a player'}:
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `To look up ${bungieName || 'a player'}:
 
 1. Use search_player with Bungie Name (format: "DisplayName#1234")
 2. This returns membershipType (platform) and membershipId
@@ -133,9 +140,10 @@ Common membershipType values:
 - 1: Xbox
 - 2: PlayStation  
 - 3: Steam
-- 6: Epic Games`
-      }
-    }]
+- 6: Epic Games`,
+        },
+      },
+    ],
   })
 );
 
@@ -144,18 +152,20 @@ server.prompt(
   'How to get an image/icon for a weapon',
   { weaponName: z.string().optional().describe('Weapon name') },
   ({ weaponName }) => ({
-    messages: [{
-      role: 'user',
-      content: {
-        type: 'text',
-        text: `To get an image for ${weaponName || 'a weapon'}:
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `To get an image for ${weaponName || 'a weapon'}:
 
 1. Use search_items with the weapon name to find its hash
 2. Use get_item_image with that hash to get the actual image
 
-The image returned will be the weapon's screenshot if available, otherwise the icon.`
-      }
-    }]
+The image returned will be the weapon's screenshot if available, otherwise the icon.`,
+        },
+      },
+    ],
   })
 );
 
@@ -164,11 +174,12 @@ server.prompt(
   'Understanding Destiny 2 hash identifiers and how to resolve them to names',
   {},
   () => ({
-    messages: [{
-      role: 'user',
-      content: {
-        type: 'text',
-        text: `# Destiny 2 Hash System
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `# Destiny 2 Hash System
 
 The Bungie API uses numeric hash identifiers for all game entities. Most tools in this MCP automatically resolve hashes to human-readable names.
 
@@ -207,9 +218,10 @@ If you encounter a raw hash, use:
 - 18: AllStrikes
 - 46: Scored Nightfall
 - 82: Dungeon
-- 84: Trials of Osiris`
-      }
-    }]
+- 84: Trials of Osiris`,
+        },
+      },
+    ],
   })
 );
 
@@ -219,7 +231,7 @@ async function main() {
   logger.info('Initializing manifest cache...');
   await manifestCache.initialize();
   logger.info(`Manifest cache ready with ${manifestCache.itemCount} items`);
-  
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   logger.info('Server running on stdio');
