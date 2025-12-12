@@ -1,5 +1,5 @@
 # Build stage - compile TypeScript
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN npm prune --production
 
 
 # Runtime stage - minimal image
-FROM node:22-alpine AS runtime
+FROM node:25-alpine AS runtime
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
