@@ -162,12 +162,14 @@ docker mcp catalog import ~/.docker/mcp/catalogs/custom-servers.yaml
 # Enable the server
 docker mcp server enable destiny2
 
-# Configure your Bungie API key
-docker mcp config set destiny2 api_key your-32-character-hex-key
+# Set your Bungie API key as a secret
+docker mcp secret set destiny2.api_key=your-32-character-hex-key
 
 # Verify installation
 docker mcp server ls
 ```
+
+**Important**: The secret name must be exactly `destiny2.api_key` (matches the `secrets[].name` in the catalog). The Docker MCP Gateway will automatically inject this as the `BUNGIE_API_KEY` environment variable when starting the container.
 
 **Updating:**
 
