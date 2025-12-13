@@ -1,0 +1,3 @@
+#!/bin/sh
+# Post-commit hook - auto-tag version bumps
+node .husky/scripts/post-commit-tasks.js
