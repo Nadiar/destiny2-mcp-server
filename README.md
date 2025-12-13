@@ -102,74 +102,24 @@ For Docker deployment, use:
 }
 ```
 
-### Docker MCP Gateway
+### Docker MCP Gateway (Recommended)
 
-For [Docker MCP Gateway](https://github.com/docker/mcp-gateway) users, install via CLI:
+For [Docker MCP Gateway](https://github.com/docker/mcp-gateway) users, this server is available in the official Docker MCP catalog:
 
-**Step 1: Create Custom Catalog**
-
-Create `~/.docker/mcp/catalogs/custom-servers.yaml`:
-
-```yaml
-version: 3
-name: custom-servers
-displayName: Custom MCP Servers
-registry:
-  destiny2:
-    description: Production-ready Model Context Protocol (MCP) server for Destiny 2
-    title: Destiny 2
-    type: server
-    dateAdded: '2025-12-13T00:40:00Z'
-    image: ghcr.io/nadiar/destiny2-mcp-server:latest
-    ref: ''
-    icon: https://www.bungie.net/img/theme/destiny/icons/icon_d2.png
-    tools:
-      - name: search_player
-      - name: find_players
-      - name: get_profile
-      - name: get_character
-      - name: get_activity_history
-      - name: get_pgcr
-      - name: get_historical_stats
-      - name: search_items
-      - name: get_item_details
-      - name: get_activity_definition
-      - name: get_clan_roster
-      - name: get_item_image
-    secrets:
-      - name: destiny2.api_key
-        env: BUNGIE_API_KEY
-        example: your-32-character-hex-key
-    prompts: 0
-    resources: {}
-    metadata:
-      category: gaming
-      tags:
-        - destiny2
-        - bungie
-        - gaming
-        - api
-      license: MIT License
-      owner: Nadiar
-```
-
-**Step 2: Import and Enable**
+> **Note**: This requires [PR #883](https://github.com/docker/mcp-registry/pull/883) to be merged. Check the PR status before using these commands.
 
 ```bash
-# Import the custom catalog
-docker mcp catalog import ~/.docker/mcp/catalogs/custom-servers.yaml
-
-# Enable the server
-docker mcp server enable destiny2
+# Enable the server from the official catalog
+docker mcp server enable destiny2-mcp-server
 
 # Set your Bungie API key as a secret
-docker mcp secret set destiny2.api_key=your-32-character-hex-key
+docker mcp secret set destiny2-mcp-server.api_key=your-32-character-hex-key
 
 # Verify installation
 docker mcp server ls
 ```
 
-**Important**: The secret name must be exactly `destiny2.api_key` (matches the `secrets[].name` in the catalog). The Docker MCP Gateway will automatically inject this as the `BUNGIE_API_KEY` environment variable when starting the container.
+That's it! The Docker MCP Gateway will automatically pull the image and configure the server.
 
 **Updating:**
 
@@ -492,3 +442,12 @@ mcp install destiny2-mcp-server
 ## License
 
 MIT - See LICENSE file for details.
+
+## Leaderboard Data
+
+Pre-scraped World's First leaderboard data from raid.report and dungeon.report is included in `leaderboard-data/`:
+
+- **leaderboards.json** - Machine-readable data with PGCR IDs
+- **leaderboards.md** - Human-readable summary
+
+Data includes top 100 contest mode completions for each raid and dungeon (or all completions if fewer than 100 teams finished during the contest window).
