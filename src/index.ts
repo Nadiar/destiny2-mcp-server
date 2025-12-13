@@ -229,15 +229,18 @@ If you encounter a raw hash, use:
 async function main() {
   // Initialize manifest cache lazily in background (won't block server startup)
   logger.info('Server starting, manifest cache will initialize on first use...');
-  
+
   // Start background initialization (non-blocking)
-  manifestCache.initialize().then(() => {
-    logger.info(`Manifest cache ready with ${manifestCache.itemCount} items`);
-  }).catch((error) => {
-    logger.warn('Manifest cache initialization failed, will retry on first tool use', { 
-      error: String(error?.message || error) 
+  manifestCache
+    .initialize()
+    .then(() => {
+      logger.info(`Manifest cache ready with ${manifestCache.itemCount} items`);
+    })
+    .catch((error) => {
+      logger.warn('Manifest cache initialization failed, will retry on first tool use', {
+        error: String(error?.message || error),
+      });
     });
-  });
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -268,4 +271,3 @@ main().catch((error) => {
   logger.error('Fatal error', { error: String(error?.stack || error) });
   process.exit(1);
 });
-

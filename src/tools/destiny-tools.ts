@@ -832,13 +832,28 @@ export function registerTools(
       membershipType: z.number().describe('Platform type (1=Xbox, 2=PS, 3=Steam, 6=Epic)'),
       membershipId: z.string().describe('Destiny membership ID'),
       characterId: z.string().describe('Character ID'),
-      mode: z.number().optional().describe('Activity mode filter (0=All, 4=Raid, 5=PvP, 82=Dungeon, 46=Nightfall)'),
-      activityHash: z.number().optional().describe('Filter to specific activity by hash (e.g., Ghosts of the Deep hash). Use search_items or get_activity_definition to find hashes.'),
-      maxActivities: z.number().optional().describe('Maximum activities to fetch (default: 250, max: 1000). Will paginate automatically.'),
+      mode: z
+        .number()
+        .optional()
+        .describe('Activity mode filter (0=All, 4=Raid, 5=PvP, 82=Dungeon, 46=Nightfall)'),
+      activityHash: z
+        .number()
+        .optional()
+        .describe(
+          'Filter to specific activity by hash (e.g., Ghosts of the Deep hash). Use search_items or get_activity_definition to find hashes.'
+        ),
+      maxActivities: z
+        .number()
+        .optional()
+        .describe(
+          'Maximum activities to fetch (default: 250, max: 1000). Will paginate automatically.'
+        ),
       fields: z
         .array(z.enum(['time', 'completions', 'kills', 'deaths', 'kd', 'efficiency']))
         .optional()
-        .describe('Which stats to include in summary. Options: time, completions, kills, deaths, kd, efficiency. Default: all'),
+        .describe(
+          'Which stats to include in summary. Options: time, completions, kills, deaths, kd, efficiency. Default: all'
+        ),
       groupBy: z
         .enum(['activity', 'none'])
         .optional()
@@ -908,10 +923,14 @@ export function registerTools(
         }
 
         // Determine which fields to include
-        const includeFields = new Set(fields || ['time', 'completions', 'kills', 'deaths', 'kd', 'efficiency']);
+        const includeFields = new Set(
+          fields || ['time', 'completions', 'kills', 'deaths', 'kd', 'efficiency']
+        );
 
         // Resolve activity names for unique hashes
-        const uniqueHashes = [...new Set(filtered.map((a) => a.activityDetails.directorActivityHash))];
+        const uniqueHashes = [
+          ...new Set(filtered.map((a) => a.activityDetails.directorActivityHash)),
+        ];
         const activityNames: Record<number, string> = {};
 
         await batchExecute(uniqueHashes.slice(0, 20), 5, async (hash) => {
