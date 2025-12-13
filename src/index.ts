@@ -261,3 +261,4 @@ main().catch((error) => {
   logger.error('Fatal error', { error: String(error?.stack || error) });
   process.exit(1);
 });
+

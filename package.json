@@ -23,7 +23,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "prepare": "npm run build",
+    "prepare": "husky install && npm run build",
     "prepublishOnly": "npm run lint && npm run test && npm run build",
     "audit:security": "npm audit --audit-level=moderate"
   },

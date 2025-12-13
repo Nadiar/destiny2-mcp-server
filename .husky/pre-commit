@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Check and sync version constants
+node .husky/scripts/validate-versions.js
