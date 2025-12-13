@@ -5,7 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { BungieApiClient } from './api/index.js';
 import { ManifestCache } from './services/index.js';
-import { registerTools } from './tools/index.js';
+import { registerTools, registerLeaderboardTools } from './tools/index.js';
 import { loadConfig, getConfigHelp, isValidApiKeyFormat, type Config } from './config.js';
 import dotenv from 'dotenv';
 import logger from './services/logger.js';
@@ -59,6 +59,9 @@ const manifestCache = new ManifestCache(config.BUNGIE_API_KEY, {
 
 // Register all Destiny 2 tools
 registerTools(server, bungieClient, manifestCache);
+
+// Register leaderboard tools (World's First data)
+registerLeaderboardTools(server);
 
 // Register prompts for common query patterns
 server.prompt(

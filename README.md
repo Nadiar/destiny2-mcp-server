@@ -283,6 +283,7 @@ Top by Playtime:
 
 ## Available Tools
 
+### Player & Profile Tools
 | Tool | Description |
 |------|-------------|
 | `search_player` | Exact Bungie name lookup (requires #code) |
@@ -293,12 +294,27 @@ Top by Playtime:
 | `get_activity_stats` | Aggregated activity statistics with pagination (up to 1000), customizable fields, and activity filtering |
 | `get_pgcr` | Post-game carnage report with time data |
 | `get_historical_stats` | Lifetime PvE/PvP statistics by activity |
+| `get_clan_roster` | Full clan member list with online status |
+
+### Item Tools
+| Tool | Description |
+|------|-------------|
 | `search_items` | Search weapons/armor by name |
 | `get_item_details` | Full item info with perks, stats, and plug sets |
 | `get_item_image` | Item screenshot or icon (supports imageType parameter) |
 | `get_activity_definition` | Activity/encounter details from manifest |
-| `get_clan_roster` | Full clan member list with online status |
 | `get_plug_set` | Available perks for specific weapon/armor slots |
+
+### World's First Leaderboard Tools
+| Tool | Description |
+|------|-------------|
+| `list_leaderboards` | List all available World's First contest leaderboards |
+| `get_leaderboard` | Get top 100 contest completions for a raid/dungeon |
+| `get_worlds_first` | Get World's First winner details for an activity |
+| `search_leaderboard_player` | Find a player's contest completions across all activities |
+| `get_leaderboard_pgcr` | Get detailed player stats for a specific leaderboard entry |
+| `compare_leaderboard_players` | Compare two players' World's First achievements |
+| `get_leaderboard_stats` | Aggregate statistics across all leaderboards |
 
 ## Releases and Updates
 
@@ -447,7 +463,18 @@ MIT - See LICENSE file for details.
 
 Pre-scraped World's First leaderboard data from raid.report and dungeon.report is included in `leaderboard-data/`:
 
-- **leaderboards.json** - Machine-readable data with PGCR IDs
-- **leaderboards.md** - Human-readable summary
+- **leaderboards-enriched.json** - Full data with player Bungie IDs, character classes, and stats
+- **leaderboards.json** - Basic data with PGCR IDs only
 
-Data includes top 100 contest mode completions for each raid and dungeon (or all completions if fewer than 100 teams finished during the contest window).
+### Included Activities
+
+**Raids (11):** Last Wish, Garden of Salvation, Deep Stone Crypt, Vault of Glass, Vow of the Disciple, King's Fall, Root of Nightmares, Crota's End, Salvation's Edge, Desert Perpetual (Contest + Epic Contest)
+
+**Dungeons (11):** Shattered Throne, Pit of Heresy, Prophecy, Grasp of Avarice, Duality, Spire of the Watcher, Ghosts of the Deep, Warlord's Ruin, Vesper's Host, Sundered Doctrine, Equilibrium
+
+Each entry includes:
+- Rank and completion time
+- PGCR ID for verification
+- Full fireteam with Bungie names and membership IDs
+- Character class and light level
+- Kill/death/assist stats per player
