@@ -86,40 +86,60 @@ Once configured, you can ask your AI assistant questions like:
 ```text
 Found 3 players matching "Guardian":
 
-1. Guardian#1234 (Confidence: HIGH 92%)
-   - Steam: 4611686018XXXXXXXXX
+1. Guardian#1234 (Confidence: 92/100 - Very High)
+   ⚡ PRIMARY ACCOUNT: Steam (type: 3, id: 4611686018XXXXXXXXX)
+   All Platforms:
+   - Steam: 4611686018XXXXXXXXX ⚡ PRIMARY
+   - Xbox: 4611686018YYYYYYYYY (linked)
+   - PlayStation: 4611686018ZZZZZZZZ (linked)
+   
    - Playtime: 4,521 hours
-   - Clan: [CLAN_NAME]
-   - Day-One Raids: 8 (Vault of Glass, King's Fall, Wrath, Last Wish, 
-     Garden, Deep Stone, Vow, Root of Nightmares)
+   - Last Played: 12/12/2025 (0 days ago)
+   - Triumph: 25,340 active / 489,230 lifetime
+   - Clan: Math Class [MATH] ⭐ Elite
+   - Day-One Clears: 8 🏆
 
-2. Guardian#5678 (Confidence: LOW 23%)
-   - PlayStation: 4611686018XXXXXXXXX
+2. Guardian#5678 (Confidence: 23/100 - Low)
+   ⚡ PRIMARY ACCOUNT: PlayStation (type: 2, id: 4611686018XXXXXXXXX)
    - Playtime: 12 hours
+   - Last Played: 03/15/2024 (633 days ago)
    - No clan
 ```
 
-### Activity History
+### Activity History & Statistics
 
-> "Show me recent raids for this player"
+> "How much time have they spent in Ghosts of the Deep?"
 
 ```text
-Recent Raid Activity:
+# Activity Statistics Summary
 
-1. Salvation's Edge (Master) - Completed
-   - Date: 2025-11-28
-   - Duration: 1h 23m
-   - Deaths: 4
+Analyzed 500 activities, sorted by time played
 
-2. Crota's End - Completed  
-   - Date: 2025-11-25
-   - Duration: 32m
-   - Deaths: 1
+## By Activity
 
-3. Root of Nightmares - Completed
-   - Date: 2025-11-22
-   - Duration: 28m
-   - Deaths: 0
+### Ghosts of the Deep
+- Activities: 145 (127 completed, 87% completion rate)
+- Total Time: 47h 23m
+- Total Kills: 18,940
+- Efficiency: 2.34
+- Date Range: 02/15/2025 - 12/11/2025
+
+### Warlord's Ruin
+- Activities: 98 (94 completed, 96% completion rate)
+- Total Time: 38h 12m
+- Date Range: 11/03/2024 - 12/10/2025
+
+### Grasp of Avarice
+- Activities: 62 (61 completed, 98% completion rate)
+- Total Time: 19h 47m
+
+---
+
+## Overall Totals
+
+- Activities: 500
+- Total Time: 115h 32m
+- Date Range: 11/20/2021 - 12/11/2025
 ```
 
 ### Post-Game Carnage Report (PGCR)
@@ -211,17 +231,19 @@ Top by Playtime:
 | Tool | Description |
 |------|-------------|
 | `search_player` | Exact Bungie name lookup (requires #code) |
-| `find_players` | Fuzzy search by partial name |
-| `get_profile` | Full player profile with characters |
-| `get_character` | Detailed character info and equipment |
-| `get_activity_history` | Recent activities for a character |
-| `get_pgcr` | Post-game carnage report details |
-| `get_historical_stats` | Lifetime PvE/PvP statistics |
+| `find_players` | Fuzzy search by partial name with confidence scores + cross-save primary detection |
+| `get_profile` | Full player profile with characters, clan, triumph scores |
+| `get_character` | Detailed character info and equipped gear |
+| `get_activity_history` | Recent activities with time played |
+| `get_activity_stats` | Aggregated activity statistics with pagination (up to 1000), customizable fields, and activity filtering |
+| `get_pgcr` | Post-game carnage report with time data |
+| `get_historical_stats` | Lifetime PvE/PvP statistics by activity |
 | `search_items` | Search weapons/armor by name |
-| `get_item_details` | Full item info with perks/stats |
-| `get_activity_definition` | Activity details from manifest |
-| `get_clan_roster` | Full clan member list |
-| `get_item_image` | Item screenshot or icon as base64 (supports imageType parameter) |
+| `get_item_details` | Full item info with perks, stats, and plug sets |
+| `get_item_image` | Item screenshot or icon (supports imageType parameter) |
+| `get_activity_definition` | Activity/encounter details from manifest |
+| `get_clan_roster` | Full clan member list with online status |
+| `get_plug_set` | Available perks for specific weapon/armor slots |
 
 ## Documentation
 

@@ -8,6 +8,7 @@ import {
   DestinyGender,
   DestinyActivityModeType,
   DestinyComponentType,
+  DestinyActivityHistoryEntry,
 } from '../types/index.js';
 import {
   getDayOneTriumphHashes,
@@ -169,7 +170,7 @@ export function registerTools(
 
   server.tool(
     'find_players',
-    'FUZZY SEARCH: Find Destiny 2 players by partial name without needing the exact #code. This is the PRIMARY tool for player lookup when you don\'t have the complete Bungie Name. Returns multiple matches sorted by confidence score to help identify legitimate accounts vs. trolls/fakes. Use this for: "find ATP", "lookup Datto", "search for bog", etc.',
+    'Fuzzy search for Destiny 2 players by partial name. Returns multiple matches sorted by confidence (0-100+), with cross-save primary account detection. Confidence weighs: recency (25%), playtime (25%), lifetime triumphs (15%), active triumphs (15%), clan (10%), plus bonuses for day-one raid clears and elite clan status. Identifies which platform is the cross-save primary for activity lookups.',
     {
       namePrefix: z
         .string()
@@ -195,7 +196,16 @@ export function registerTools(
         // Fetch profile data for each result to calculate confidence scores
         interface PlayerResult {
           fullId: string;
-          memberships: Array<{ platform: string; id: string }>;
+          memberships: Array<{
+            platform: string;
+            id: string;
+            membershipType: number;
+            isPrimary: boolean;
+            isCrossSaved: boolean;
+          }>;
+          primaryPlatform: string | null;
+          primaryMembershipType: number | null;
+          primaryMembershipId: string | null;
           confidence: number;
           confidenceLabel: string;
           totalPlaytimeHours: number;
@@ -214,7 +224,13 @@ export function registerTools(
         const playerResults: PlayerResult[] = await Promise.all(
           response.searchResults.map(async (result) => {
             const fullId = `${result.bungieGlobalDisplayName}#${result.bungieGlobalDisplayNameCode}`;
-            const memberships: Array<{ platform: string; id: string }> = [];
+            const memberships: Array<{
+              platform: string;
+              id: string;
+              membershipType: number;
+              isPrimary: boolean;
+              isCrossSaved: boolean;
+            }> = [];
 
             let totalPlaytimeHours = 0;
             let lastPlayed: Date | null = null;
@@ -225,15 +241,34 @@ export function registerTools(
             let clanTag: string | null = null;
             let dayOneCount = 0;
             let dayOneTriumphs: DayOneTriumph[] = [];
+            let primaryPlatform: string | null = null;
+            let primaryMembershipType: number | null = null;
+            let primaryMembershipId: string | null = null;
 
             if (result.destinyMemberships && result.destinyMemberships.length > 0) {
-              // Use primary membership for profile lookup
-              const primary = result.destinyMemberships[0];
+              // Determine the cross-save primary account
+              // crossSaveOverride indicates which platform is primary (0 = no cross-save, otherwise it's the primary type)
+              const crossSaveType = result.destinyMemberships[0].crossSaveOverride;
+              const hasCrossSave = crossSaveType !== 0;
+
+              // Find the primary membership (the one matching crossSaveOverride, or first if no cross-save)
+              const primary = hasCrossSave
+                ? result.destinyMemberships.find((m) => m.membershipType === crossSaveType) ||
+                  result.destinyMemberships[0]
+                : result.destinyMemberships[0];
+
+              primaryPlatform = getMembershipTypeName(primary.membershipType);
+              primaryMembershipType = primary.membershipType;
+              primaryMembershipId = primary.membershipId;
 
               for (const membership of result.destinyMemberships) {
+                const isPrimary = membership.membershipType === primary.membershipType;
                 memberships.push({
                   platform: getMembershipTypeName(membership.membershipType),
                   id: membership.membershipId,
+                  membershipType: membership.membershipType,
+                  isPrimary,
+                  isCrossSaved: hasCrossSave,
                 });
               }
 
@@ -303,33 +338,39 @@ export function registerTools(
               : 9999;
 
             // Calculate confidence score (0-100 base, can exceed with day-one bonus)
-            // Base weights: playtime (30%), lifetime triumph (20%), active triumph (15%), recency (15%), clan (10%)
+            // UPDATED weights to emphasize recency + playtime for better disambiguation:
+            // Base weights: recency (25%), playtime (25%), lifetime triumph (15%), active triumph (15%), clan (10%)
             // Day-one raid bonus: +15-50 depending on number of clears
             let confidence = 0;
 
-            // Playtime score (0-30): 500+ hours = max, log scale
+            // Recency score (0-25): played in last 30 days = max, steep decay after
+            // This is KEY for finding the "real" player - active players are almost always the right match
+            let recencyScore = 0;
+            if (daysSinceLastPlayed <= 30) {
+              recencyScore = 25; // Max score for recent activity
+            } else if (daysSinceLastPlayed <= 90) {
+              recencyScore = 15 + 10 * (1 - (daysSinceLastPlayed - 30) / 60);
+            } else if (daysSinceLastPlayed <= 365) {
+              recencyScore = 15 * (1 - (daysSinceLastPlayed - 90) / 275);
+            }
+            // No points for >365 days inactive
+            confidence += recencyScore;
+
+            // Playtime score (0-25): scaled for heavy investment
+            // 100 hours = 10 pts, 500 hours = 18 pts, 1000+ hours = 22-25 pts
             const playtimeScore = Math.min(
-              30,
-              (Math.log10(totalPlaytimeHours + 1) / Math.log10(501)) * 30
+              25,
+              (Math.log10(totalPlaytimeHours + 1) / Math.log10(1001)) * 25
             );
             confidence += playtimeScore;
 
-            // Lifetime triumph score (0-20): 100k+ = max
-            const lifetimeScorePoints = Math.min(20, (lifetimeScore / 100000) * 20);
+            // Lifetime triumph score (0-15): 100k+ = max
+            const lifetimeScorePoints = Math.min(15, (lifetimeScore / 100000) * 15);
             confidence += lifetimeScorePoints;
 
             // Active triumph score (0-15): 20k+ = max
             const activeScorePoints = Math.min(15, (activeScore / 20000) * 15);
             confidence += activeScorePoints;
-
-            // Recency score (0-15): played in last 30 days = max, decays over 365 days
-            let recencyScore = 0;
-            if (daysSinceLastPlayed <= 30) {
-              recencyScore = 15;
-            } else if (daysSinceLastPlayed <= 365) {
-              recencyScore = 15 * (1 - (daysSinceLastPlayed - 30) / 335);
-            }
-            confidence += recencyScore;
 
             // Clan bonus (0-10 for any clan, extra for elite clans)
             if (hasClan) {
@@ -348,7 +389,7 @@ export function registerTools(
             // Round to nearest integer (can exceed 100 for day-one raiders or elite clan members)
             confidence = Math.round(confidence);
 
-            // Confidence label
+            // Confidence label - emphasize activity level
             let confidenceLabel: string;
             if (dayOneCount >= 3) {
               confidenceLabel = `Elite (${dayOneCount} Day-One Clears!)`;
@@ -357,15 +398,15 @@ export function registerTools(
             } else if (inEliteClan) {
               confidenceLabel = 'Elite Clan Member';
             } else if (confidence >= 80) {
-              confidenceLabel = 'Very High (Established Player)';
+              confidenceLabel = 'Very High (Active Veteran)';
             } else if (confidence >= 60) {
               confidenceLabel = 'High (Active Player)';
             } else if (confidence >= 40) {
-              confidenceLabel = 'Medium (Casual/Returning)';
+              confidenceLabel = 'Medium (Semi-Active)';
             } else if (confidence >= 20) {
-              confidenceLabel = 'Low (New/Inactive)';
+              confidenceLabel = 'Low (Inactive/New)';
             } else {
-              confidenceLabel = 'Very Low (Likely Troll/Fake)';
+              confidenceLabel = 'Very Low (Inactive - Likely Not Target)';
             }
 
             return {
@@ -384,6 +425,9 @@ export function registerTools(
               inEliteClan,
               dayOneCount,
               dayOneTriumphs,
+              primaryPlatform,
+              primaryMembershipType,
+              primaryMembershipId,
             };
           })
         );
@@ -393,7 +437,8 @@ export function registerTools(
 
         let output = `# Players matching "${namePrefix}"\n\n`;
         output += `Found ${playerResults.length} result(s)${response.hasMore ? ' (more available)' : ''}, sorted by confidence:\n\n`;
-        output += `> **Confidence Score** weighs: playtime (30%), lifetime triumph (20%), active triumph (15%), recency (15%), clan (10%), plus bonus for verified day-one raid clears and elite clan membership. Players with day-one completions are proven elite raiders.\n\n`;
+        output += `> **Confidence Score** weighs: recency (25%), playtime (25%), lifetime triumph (15%), active triumph (15%), clan (10%), plus bonus for verified day-one raid clears and elite clan membership. **Recently active players with more hours are most likely the correct match.**\n\n`;
+        output += `> **⚡ PRIMARY** indicates the cross-save primary account - use this for activity lookups!\n\n`;
 
         for (const result of playerResults) {
           output += `## ${result.fullId}`;
@@ -406,9 +451,21 @@ export function registerTools(
           output += `\n`;
           output += `**Confidence:** ${result.confidence}/100 - ${result.confidenceLabel}\n`;
 
+          // Highlight primary account prominently
+          if (result.primaryPlatform && result.primaryMembershipId) {
+            output += `**⚡ PRIMARY ACCOUNT:** ${result.primaryPlatform} (type: ${result.primaryMembershipType}, id: ${result.primaryMembershipId})\n`;
+          }
+
           if (result.memberships.length > 0) {
+            output += `**All Platforms:**\n`;
             for (const membership of result.memberships) {
-              output += `- **${membership.platform}:** ${membership.id}\n`;
+              if (membership.isPrimary) {
+                output += `- **${membership.platform}:** ${membership.id} ⚡ PRIMARY\n`;
+              } else if (membership.isCrossSaved) {
+                output += `- ${membership.platform}: ${membership.id} (linked)\n`;
+              } else {
+                output += `- **${membership.platform}:** ${membership.id}\n`;
+              }
             }
           } else {
             output += `- No active Destiny 2 memberships\n`;
@@ -657,7 +714,7 @@ export function registerTools(
 
   server.tool(
     'get_activity_history',
-    'Get recent activity history for a character with resolved activity names',
+    'Get recent activity history for a character with resolved activity names and time played. Includes completion status, kills, deaths, and assists per activity.',
     {
       membershipType: z.number().describe('Platform type'),
       membershipId: z.string().describe('Destiny membership ID'),
@@ -708,6 +765,7 @@ export function registerTools(
         );
 
         let output = '# Recent Activities\n\n';
+        let totalTimePlayedSeconds = 0;
 
         for (const activity of result.activities) {
           const date = new Date(activity.period).toLocaleDateString();
@@ -727,6 +785,12 @@ export function registerTools(
           if (activity.values.completed) {
             output += `- **Completed:** ${activity.values.completed.basic.displayValue}\n`;
           }
+          // Add duration info
+          if (activity.values.timePlayedSeconds) {
+            const seconds = activity.values.timePlayedSeconds.basic.value;
+            totalTimePlayedSeconds += seconds;
+            output += `- **Time Played:** ${activity.values.timePlayedSeconds.basic.displayValue}\n`;
+          }
           if (activity.values.kills) {
             output += `- **Kills:** ${activity.values.kills.basic.displayValue}\n`;
           }
@@ -739,6 +803,11 @@ export function registerTools(
           output += '\n';
         }
 
+        // Add summary with total time
+        const totalHours = Math.floor(totalTimePlayedSeconds / 3600);
+        const totalMinutes = Math.floor((totalTimePlayedSeconds % 3600) / 60);
+        output += `---\n**Total Time in ${result.activities.length} Activities:** ${totalHours}h ${totalMinutes}m\n`;
+
         return {
           content: [{ type: 'text', text: output }],
         };
@@ -748,6 +817,251 @@ export function registerTools(
             {
               type: 'text',
               text: `Error fetching activities: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'get_activity_stats',
+    'Get aggregated activity statistics with customizable fields and pagination. Can fetch beyond 250 activities by using multiple pages. Perfect for calculating total time spent in specific activities like "Ghosts of the Deep".',
+    {
+      membershipType: z.number().describe('Platform type (1=Xbox, 2=PS, 3=Steam, 6=Epic)'),
+      membershipId: z.string().describe('Destiny membership ID'),
+      characterId: z.string().describe('Character ID'),
+      mode: z.number().optional().describe('Activity mode filter (0=All, 4=Raid, 5=PvP, 82=Dungeon, 46=Nightfall)'),
+      activityHash: z.number().optional().describe('Filter to specific activity by hash (e.g., Ghosts of the Deep hash). Use search_items or get_activity_definition to find hashes.'),
+      maxActivities: z.number().optional().describe('Maximum activities to fetch (default: 250, max: 1000). Will paginate automatically.'),
+      fields: z
+        .array(z.enum(['time', 'completions', 'kills', 'deaths', 'kd', 'efficiency']))
+        .optional()
+        .describe('Which stats to include in summary. Options: time, completions, kills, deaths, kd, efficiency. Default: all'),
+      groupBy: z
+        .enum(['activity', 'none'])
+        .optional()
+        .describe('Group results by activity name or return flat totals. Default: activity'),
+    },
+    async ({
+      membershipType,
+      membershipId,
+      characterId,
+      mode = 0,
+      activityHash,
+      maxActivities = 250,
+      fields,
+      groupBy = 'activity',
+    }) => {
+      try {
+        // Clamp max activities to prevent abuse
+        const actualMax = Math.min(maxActivities, 1000);
+        const pageSize = 250;
+        const pagesToFetch = Math.ceil(actualMax / pageSize);
+
+        // Fetch all pages in parallel (up to 4 concurrent)
+        const allActivities: DestinyActivityHistoryEntry[] = [];
+
+        for (let page = 0; page < pagesToFetch && allActivities.length < actualMax; page++) {
+          const result = await client.getActivityHistory(
+            membershipType,
+            membershipId,
+            characterId,
+            mode as DestinyActivityModeType,
+            pageSize,
+            page
+          );
+
+          if (!result.activities || result.activities.length === 0) break;
+          allActivities.push(...result.activities);
+
+          // If we got fewer than pageSize, no more pages
+          if (result.activities.length < pageSize) break;
+        }
+
+        if (allActivities.length === 0) {
+          return {
+            content: [{ type: 'text', text: 'No activities found matching criteria.' }],
+          };
+        }
+
+        // Filter by activity hash if specified
+        let filtered = allActivities;
+        if (activityHash) {
+          filtered = allActivities.filter(
+            (a) =>
+              a.activityDetails.directorActivityHash === activityHash ||
+              a.activityDetails.referenceId === activityHash
+          );
+        }
+
+        if (filtered.length === 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `No activities found with hash ${activityHash}. Fetched ${allActivities.length} total activities.`,
+              },
+            ],
+          };
+        }
+
+        // Determine which fields to include
+        const includeFields = new Set(fields || ['time', 'completions', 'kills', 'deaths', 'kd', 'efficiency']);
+
+        // Resolve activity names for unique hashes
+        const uniqueHashes = [...new Set(filtered.map((a) => a.activityDetails.directorActivityHash))];
+        const activityNames: Record<number, string> = {};
+
+        await batchExecute(uniqueHashes.slice(0, 20), 5, async (hash) => {
+          try {
+            const def = await client.getActivityDefinition(hash);
+            const displayProps = def as { displayProperties?: { name?: string } };
+            activityNames[hash] = displayProps.displayProperties?.name || `Unknown (${hash})`;
+          } catch {
+            activityNames[hash] = `Unknown (${hash})`;
+          }
+        });
+
+        // Aggregate stats
+        interface ActivityStats {
+          count: number;
+          completions: number;
+          timePlayedSeconds: number;
+          kills: number;
+          deaths: number;
+          assists: number;
+          oldest: Date;
+          newest: Date;
+        }
+
+        const statsByActivity: Record<string, ActivityStats> = {};
+        const totals: ActivityStats = {
+          count: 0,
+          completions: 0,
+          timePlayedSeconds: 0,
+          kills: 0,
+          deaths: 0,
+          assists: 0,
+          oldest: new Date(),
+          newest: new Date(0),
+        };
+
+        for (const activity of filtered) {
+          const hash = activity.activityDetails.directorActivityHash;
+          const name = activityNames[hash] || `Activity ${hash}`;
+          const date = new Date(activity.period);
+
+          if (!statsByActivity[name]) {
+            statsByActivity[name] = {
+              count: 0,
+              completions: 0,
+              timePlayedSeconds: 0,
+              kills: 0,
+              deaths: 0,
+              assists: 0,
+              oldest: new Date(),
+              newest: new Date(0),
+            };
+          }
+
+          const stats = statsByActivity[name];
+          stats.count++;
+          totals.count++;
+
+          if (activity.values.completed?.basic.value === 1) {
+            stats.completions++;
+            totals.completions++;
+          }
+
+          const timePlayed = activity.values.timePlayedSeconds?.basic.value || 0;
+          stats.timePlayedSeconds += timePlayed;
+          totals.timePlayedSeconds += timePlayed;
+
+          const kills = activity.values.kills?.basic.value || 0;
+          stats.kills += kills;
+          totals.kills += kills;
+
+          const deaths = activity.values.deaths?.basic.value || 0;
+          stats.deaths += deaths;
+          totals.deaths += deaths;
+
+          const assists = activity.values.assists?.basic.value || 0;
+          stats.assists += assists;
+          totals.assists += assists;
+
+          if (date < stats.oldest) stats.oldest = date;
+          if (date > stats.newest) stats.newest = date;
+          if (date < totals.oldest) totals.oldest = date;
+          if (date > totals.newest) totals.newest = date;
+        }
+
+        // Format output
+        const formatTime = (seconds: number) => {
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          return `${hours}h ${minutes}m`;
+        };
+
+        const formatStats = (stats: ActivityStats, name?: string) => {
+          let out = name ? `### ${name}\n` : '';
+          out += `- **Activities:** ${stats.count}`;
+          if (includeFields.has('completions')) {
+            out += ` (${stats.completions} completed, ${Math.round((stats.completions / stats.count) * 100)}% completion rate)`;
+          }
+          out += '\n';
+
+          if (includeFields.has('time')) {
+            out += `- **Total Time:** ${formatTime(stats.timePlayedSeconds)}\n`;
+          }
+          if (includeFields.has('kills')) {
+            out += `- **Total Kills:** ${stats.kills.toLocaleString()}\n`;
+          }
+          if (includeFields.has('deaths')) {
+            out += `- **Total Deaths:** ${stats.deaths.toLocaleString()}\n`;
+          }
+          if (includeFields.has('kd') && stats.deaths > 0) {
+            out += `- **K/D Ratio:** ${(stats.kills / stats.deaths).toFixed(2)}\n`;
+          }
+          if (includeFields.has('efficiency') && stats.deaths > 0) {
+            out += `- **Efficiency:** ${((stats.kills + stats.assists) / stats.deaths).toFixed(2)}\n`;
+          }
+          out += `- **Date Range:** ${stats.oldest.toLocaleDateString()} - ${stats.newest.toLocaleDateString()}\n`;
+          return out;
+        };
+
+        let output = `# Activity Statistics Summary\n\n`;
+        output += `Analyzed ${filtered.length} activities`;
+        if (activityHash) {
+          output += ` (filtered from ${allActivities.length} total)`;
+        }
+        output += `\n\n`;
+
+        if (groupBy === 'activity' && Object.keys(statsByActivity).length > 1) {
+          // Sort by time played descending
+          const sorted = Object.entries(statsByActivity).sort(
+            (a, b) => b[1].timePlayedSeconds - a[1].timePlayedSeconds
+          );
+
+          output += `## By Activity\n\n`;
+          for (const [name, stats] of sorted) {
+            output += formatStats(stats, name) + '\n';
+          }
+        }
+
+        output += `## Overall Totals\n\n`;
+        output += formatStats(totals);
+
+        return {
+          content: [{ type: 'text', text: output }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Error fetching activity stats: ${error instanceof Error ? error.message : 'Unknown error'}`,
             },
           ],
           isError: true,
@@ -784,7 +1098,13 @@ export function registerTools(
         output += `**Activity Hash:** ${pgcr.activityDetails.directorActivityHash}\n`;
         output += `**Date:** ${new Date(pgcr.period).toLocaleString()}\n`;
         output += `**Mode:** ${modeName}\n`;
-        output += `**Reference ID:** ${pgcr.activityDetails.referenceId}\n\n`;
+        output += `**Reference ID:** ${pgcr.activityDetails.referenceId}\n`;
+
+        // Add activity duration from first entry (same for all players)
+        if (pgcr.entries.length > 0 && pgcr.entries[0].values.activityDurationSeconds) {
+          output += `**Activity Duration:** ${pgcr.entries[0].values.activityDurationSeconds.basic.displayValue}\n`;
+        }
+        output += '\n';
 
         if (pgcr.teams && pgcr.teams.length > 0) {
           output += '## Teams\n\n';
@@ -816,6 +1136,9 @@ export function registerTools(
           }
           if (entry.values.assists) {
             output += `- **Assists:** ${entry.values.assists.basic.displayValue}\n`;
+          }
+          if (entry.values.timePlayedSeconds) {
+            output += `- **Time Played:** ${entry.values.timePlayedSeconds.basic.displayValue}\n`;
           }
           output += '\n';
         }
