@@ -17,9 +17,17 @@ Production-ready Model Context Protocol (MCP) server for Destiny 2, providing pl
 
 ### Installation
 
+**Option 1: npm (Node.js required)**
 ```bash
 npm install -g destiny2-mcp-server
 ```
+
+**Option 2: Docker (recommended for production)**
+```bash
+docker pull ghcr.io/nadiar/destiny2-mcp-server:latest
+```
+
+See [Docker Deployment Guide](docs/DOCKER.md) for detailed Docker setup.
 
 ### Configuration
 
@@ -58,7 +66,7 @@ npm start
 
 ## MCP Client Configuration
 
-### Claude Desktop
+### Claude Desktop (npm installation)
 
 Add to claude_desktop_config.json:
 
@@ -73,6 +81,101 @@ Add to claude_desktop_config.json:
     }
   }
 }
+```
+
+### Claude Desktop (Docker)
+
+For Docker deployment, use:
+
+```json
+{
+  "mcpServers": {
+    "destiny2": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "BUNGIE_API_KEY=your-api-key-here",
+        "ghcr.io/nadiar/destiny2-mcp-server:latest"
+      ]
+    }
+  }
+}
+```
+
+### Docker MCP Gateway
+
+For [Docker MCP Gateway](https://github.com/docker/mcp-gateway) users, install via CLI:
+
+**Step 1: Create Custom Catalog**
+
+Create `~/.docker/mcp/catalogs/custom-servers.yaml`:
+
+```yaml
+version: 3
+name: custom-servers
+displayName: Custom MCP Servers
+registry:
+  destiny2:
+    description: Production-ready Model Context Protocol (MCP) server for Destiny 2
+    title: Destiny 2
+    type: server
+    dateAdded: '2025-12-13T00:40:00Z'
+    image: ghcr.io/nadiar/destiny2-mcp-server:latest
+    ref: ''
+    icon: https://www.bungie.net/img/theme/destiny/icons/icon_d2.png
+    tools:
+      - name: search_player
+      - name: find_players
+      - name: get_profile
+      - name: get_character
+      - name: get_activity_history
+      - name: get_pgcr
+      - name: get_historical_stats
+      - name: search_items
+      - name: get_item_details
+      - name: get_activity_definition
+      - name: get_clan_roster
+      - name: get_item_image
+    secrets:
+      - name: destiny2.api_key
+        env: BUNGIE_API_KEY
+        example: your-32-character-hex-key
+    prompts: 0
+    resources: {}
+    metadata:
+      category: gaming
+      tags:
+        - destiny2
+        - bungie
+        - gaming
+        - api
+      license: MIT License
+      owner: Nadiar
+```
+
+**Step 2: Import and Enable**
+
+```bash
+# Import the custom catalog
+docker mcp catalog import ~/.docker/mcp/catalogs/custom-servers.yaml
+
+# Enable the server
+docker mcp server enable destiny2
+
+# Configure your Bungie API key
+docker mcp config set destiny2 api_key your-32-character-hex-key
+
+# Verify installation
+docker mcp server ls
+```
+
+**Updating:**
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/nadiar/destiny2-mcp-server:latest
+
+# Restart your MCP client to use the new version
 ```
 
 ## Example Usage
@@ -245,6 +348,34 @@ Top by Playtime:
 | `get_clan_roster` | Full clan member list with online status |
 | `get_plug_set` | Available perks for specific weapon/armor slots |
 
+## Releases and Updates
+
+### Latest Release
+
+Docker images and npm packages are automatically published on each release:
+- **Docker**: `ghcr.io/nadiar/destiny2-mcp-server:latest` or `:1.2.4`
+- **npm**: `npm install -g destiny2-mcp-server@latest`
+
+View all releases: [GitHub Releases](https://github.com/Nadiar/destiny2-mcp-server/releases)
+
+### Updating
+
+**npm installation:**
+```bash
+npm update -g destiny2-mcp-server
+```
+
+**Docker installation:**
+```bash
+# Pull latest version
+docker pull ghcr.io/nadiar/destiny2-mcp-server:latest
+
+# Or pull specific version
+docker pull ghcr.io/nadiar/destiny2-mcp-server:1.2.4
+```
+
+After updating, restart your MCP client (Claude Desktop, etc.).
+
 ## Documentation
 
 - **[API Reference](docs/API.md)** - Complete tool reference with examples
@@ -276,6 +407,85 @@ This project uses GitHub Actions for continuous integration and deployment:
   - Weekly checks for npm, GitHub Actions, and Docker base images
   - Grouped minor/patch updates
   - Security vulnerability alerts
+
+## Adding to MCP Toolkit Registry
+
+To make this server discoverable in the [MCP Toolkit Registry](https://github.com/modelcontextprotocol/servers):
+
+### 1. Fork the MCP Servers Repository
+
+```bash
+# Fork https://github.com/modelcontextprotocol/servers on GitHub
+git clone https://github.com/YOUR_USERNAME/servers.git
+cd servers
+```
+
+### 2. Add Server Entry
+
+Create a new entry in `src/servers.json`:
+
+```json
+{
+  "name": "destiny2-mcp-server",
+  "description": "Destiny 2 API integration with player lookup, activity tracking, item/perk resolution, clan management, and day-one triumph scoring",
+  "repository": "https://github.com/Nadiar/destiny2-mcp-server",
+  "icon": "https://www.bungie.net/img/theme/destiny/icons/icon_d2.png",
+  "categories": ["gaming", "api"],
+  "installation": {
+    "npm": "destiny2-mcp-server",
+    "docker": "ghcr.io/nadiar/destiny2-mcp-server"
+  },
+  "configuration": {
+    "required": {
+      "BUNGIE_API_KEY": "Your Bungie API key from https://www.bungie.net/en/Application"
+    },
+    "optional": {
+      "LOG_LEVEL": "Logging level (debug, info, warn, error)",
+      "CACHE_TTL_HOURS": "Manifest cache TTL in hours (1-168)",
+      "API_RATE_LIMIT_MS": "Minimum ms between API requests (50-1000)"
+    }
+  },
+  "features": [
+    "Fuzzy player search by Bungie name",
+    "Activity history with automatic name resolution",
+    "Post-game carnage reports (PGCR)",
+    "Item/weapon perk lookups via local manifest cache",
+    "Clan roster management",
+    "Day-one raid completion detection",
+    "Item images (screenshots and icons)",
+    "Lifetime statistics tracking"
+  ]
+}
+```
+
+### 3. Submit Pull Request
+
+```bash
+git checkout -b add-destiny2-mcp-server
+git add src/servers.json
+git commit -m "Add destiny2-mcp-server to registry"
+git push origin add-destiny2-mcp-server
+
+# Create PR on GitHub: https://github.com/modelcontextprotocol/servers
+```
+
+### 4. PR Guidelines
+
+- Ensure all tests pass
+- Server must be publicly available (npm/Docker)
+- Documentation should be complete
+- Follow the [contribution guidelines](https://github.com/modelcontextprotocol/servers/blob/main/CONTRIBUTING.md)
+
+### Alternative: Use MCP Config Generator
+
+Users can also add this server manually using the MCP toolkit:
+
+```bash
+# Using npm
+mcp install destiny2-mcp-server
+
+# Or add to Claude Desktop config manually (see MCP Client Configuration above)
+```
 
 ## License
 

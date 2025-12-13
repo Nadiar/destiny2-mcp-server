@@ -11,7 +11,7 @@ import dotenv from 'dotenv';
 import logger from './services/logger.js';
 
 // Package version - keep in sync with package.json
-const VERSION = '1.0.2';
+const VERSION = '1.2.4';
 
 // Load environment variables from .env if present
 dotenv.config();
