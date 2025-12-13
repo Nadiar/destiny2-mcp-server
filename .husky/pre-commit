@@ -1,5 +1,3 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Check and sync version constants
+# Version validation hook - ensures VERSION constant matches package.json
 node .husky/scripts/validate-versions.js
