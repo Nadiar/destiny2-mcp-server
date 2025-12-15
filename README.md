@@ -315,6 +315,21 @@ Top by Playtime:
 | `get_leaderboard_pgcr` | Get detailed player stats for a specific leaderboard entry |
 | `compare_leaderboard_players` | Compare two players' World's First achievements |
 | `get_leaderboard_stats` | Aggregate statistics across all leaderboards |
+| `filter_leaderboard_entries` | Filter leaderboard entries by activity, rank, or player name |
+#### Example: Filter Leaderboard Entries
+
+> "Show me all top 10 Salvation's Edge runs with Datto in the fireteam"
+
+```typescript
+{
+  activity: "Salvation's Edge",
+  minRank: 1,
+  maxRank: 10,
+  player: "Datto"
+}
+```
+
+Returns a list of leaderboard entries matching the filters, including rank, player names, and completion time.
 
 ## Releases and Updates
 

@@ -359,6 +359,50 @@ Get item image as base64-encoded data.
 
 ## Clan Tools
 
+## Leaderboard Tools
+
+### filter_leaderboard_entries
+
+Filter leaderboard entries by activity name (partial), rank range, or partial player name. All filters are optional and case-insensitive.
+
+**Parameters:**
+- `activity` (string, optional): Activity name (partial match, e.g., "Last Wish")
+- `minRank` (number, optional): Minimum rank (inclusive)
+- `maxRank` (number, optional): Maximum rank (inclusive)
+- `player` (string, optional): Player name (partial match, e.g., "Datto")
+
+**Returns:**
+- List of leaderboard entries matching the filters (rank, player names, completion time)
+
+**Example:**
+```typescript
+{
+  activity: "Salvation's Edge",
+  minRank: 1,
+  maxRank: 10,
+  player: "Datto"
+}
+```
+
+**Response:**
+```json
+{
+  "entries": [
+    {
+      "rank": 3,
+      "players": ["Datto#1234", "Sweatcicle#5678", "Saltagreppo#9999"],
+      "time": "1h 23m 47s"
+    },
+    ...
+  ]
+}
+```
+
+**Use Cases:**
+- Find all top 10 runs for a specific player
+- Filter by activity and rank range
+- Search for completions with a given player in the fireteam
+
 ### get_clan_roster
 
 Get complete clan roster with member details.

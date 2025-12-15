@@ -196,9 +196,51 @@ async function aggregateClanScores(players, label) {
 async function main() {
   // Get clan scores from top 200 combined players
   const clanScores = await aggregateClanScores(topCombined, 'combined players');
-  
+
   const clansArray = Array.from(clanScores.values());
-  
+
+  // Bell curve normalization (z-score)
+  function mean(arr) {
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+  }
+  function stddev(arr, mu) {
+    return Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - mu, 2), 0) / arr.length);
+  }
+
+  const raidPointsArr = clansArray.map(c => c.raidPoints);
+  const dungeonPointsArr = clansArray.map(c => c.dungeonPoints);
+  const totalPointsArr = clansArray.map(c => c.totalPoints);
+
+  const raidMean = mean(raidPointsArr);
+  const raidStd = stddev(raidPointsArr, raidMean) || 1;
+  const dungeonMean = mean(dungeonPointsArr);
+  const dungeonStd = stddev(dungeonPointsArr, dungeonMean) || 1;
+  const totalMean = mean(totalPointsArr);
+  const totalStd = stddev(totalPointsArr, totalMean) || 1;
+
+  function rescaleZ(z, minZ, maxZ) {
+    const clamped = Math.max(minZ, Math.min(maxZ, z));
+    return ((clamped - minZ) / (maxZ - minZ)) * 100;
+  }
+
+  // Add z-scores and rescaled bell scores
+  for (const c of clansArray) {
+    c.raidZ = (c.raidPoints - raidMean) / raidStd;
+    c.dungeonZ = (c.dungeonPoints - dungeonMean) / dungeonStd;
+    c.totalZ = (c.totalPoints - totalMean) / totalStd;
+  }
+  const raidZs = clansArray.map(c => c.raidZ);
+  const dungeonZs = clansArray.map(c => c.dungeonZ);
+  const totalZs = clansArray.map(c => c.totalZ);
+  const raidMinZ = Math.min(...raidZs), raidMaxZ = Math.max(...raidZs);
+  const dungeonMinZ = Math.min(...dungeonZs), dungeonMaxZ = Math.max(...dungeonZs);
+  const totalMinZ = Math.min(...totalZs), totalMaxZ = Math.max(...totalZs);
+  for (const c of clansArray) {
+    c.raidBell = rescaleZ(c.raidZ, raidMinZ, raidMaxZ);
+    c.dungeonBell = rescaleZ(c.dungeonZ, dungeonMinZ, dungeonMaxZ);
+    c.totalBell = rescaleZ(c.totalZ, totalMinZ, totalMaxZ);
+  }
+
   // Sort by different metrics
   const byCombined = [...clansArray].sort((a, b) => b.totalPoints - a.totalPoints);
   const byRaid = [...clansArray].sort((a, b) => b.raidPoints - a.raidPoints);
@@ -257,11 +299,12 @@ async function main() {
     );
   }
   
-  // Save detailed results
+  // Save detailed results with normalized scores
   const output = {
     generated: new Date().toISOString(),
     methodology: {
       formula: '100 / 2^(rank-1) for top 25, flat 1 point for ranks 26-100',
+      normalization: 'Bell curve (z-score) normalization for raid, dungeon, and combined scores; rescaled to 0-100',
       example: '1st=100, 2nd=50, 3rd=25, 4th=12.5, 5th=6.25, ..., 26th+=1',
       raidMultiplier: RAID_MULTIPLIER,
       dungeonMultiplier: DUNGEON_MULTIPLIER,
@@ -274,8 +317,11 @@ async function main() {
         name: c.name,
         groupId: c.groupId,
         totalPoints: Math.round(c.totalPoints * 10) / 10,
+        totalBell: Math.round(c.totalBell * 10) / 10,
         raidPoints: Math.round(c.raidPoints * 10) / 10,
+        raidBell: Math.round(c.raidBell * 10) / 10,
         dungeonPoints: Math.round(c.dungeonPoints * 10) / 10,
+        dungeonBell: Math.round(c.dungeonBell * 10) / 10,
         memberCount: c.members.length
       })),
       raidOnly: byRaid.slice(0, 50).map((c, i) => ({
@@ -284,6 +330,7 @@ async function main() {
         name: c.name,
         groupId: c.groupId,
         raidPoints: Math.round(c.raidPoints * 10) / 10,
+        raidBell: Math.round(c.raidBell * 10) / 10,
         memberCount: c.members.length
       })),
       dungeonOnly: byDungeon.slice(0, 50).map((c, i) => ({
@@ -292,6 +339,7 @@ async function main() {
         name: c.name,
         groupId: c.groupId,
         dungeonPoints: Math.round(c.dungeonPoints * 10) / 10,
+        dungeonBell: Math.round(c.dungeonBell * 10) / 10,
         memberCount: c.members.length
       }))
     }
@@ -299,7 +347,7 @@ async function main() {
   
   const outputPath = path.join(projectRoot, '.pgcr-cache', 'elite-clans-weighted.json');
   fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
-  console.log(`\n✅ Detailed results saved to ${outputPath}`);
+  console.log(`\n	 Detailed results saved to ${outputPath}`);
 }
 
 main().catch(console.error);

@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { getEliteTierForPlayer } from './elite-tier.js';
 
 // Types for enriched leaderboard data
 interface LeaderboardPlayer {
@@ -85,14 +86,20 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
     const data = await readFile(dataPath, 'utf-8');
     leaderboardDataCache = JSON.parse(data);
     cacheLoadTime = now;
-    return leaderboardDataCache!;
+    if (!leaderboardDataCache) {
+      throw new Error('Leaderboard data cache is not loaded');
+    }
+    return leaderboardDataCache;
   } catch {
     // Fall back to non-enriched data
     const fallbackPath = join(__dirname, '..', '..', 'leaderboard-data', 'leaderboards.json');
     const data = await readFile(fallbackPath, 'utf-8');
     leaderboardDataCache = JSON.parse(data);
     cacheLoadTime = now;
-    return leaderboardDataCache!;
+    if (!leaderboardDataCache) {
+      throw new Error('Leaderboard data cache is not loaded');
+    }
+    return leaderboardDataCache;
   }
 }
 
@@ -325,6 +332,10 @@ export function registerLeaderboardTools(server: McpServer): void {
           };
         }
 
+        // Try to get elite tier for the first matching player
+        const eliteTier = await getEliteTierForPlayer(results[0].player.membershipId);
+        const eliteTierText = eliteTier ? `\n**PvE ${eliteTier}**` : '';
+
         // Group by player (in case multiple matches)
         const playerResults = results.map((r) => {
           return `**${r.leaderboard.activity}** - Rank #${r.entry.rank}\n   Time: ${formatTime(r.entry.time)}\n   Player: ${r.player.bungieName} (${getPlatformName(r.player.membershipType)})\n   PGCR: ${r.entry.pgcrId}`;
@@ -334,7 +345,7 @@ export function registerLeaderboardTools(server: McpServer): void {
           content: [
             {
               type: 'text',
-              text: `# World's First Completions for "${player}"\n\nFound ${results.length} contest completion(s):\n\n${playerResults.join('\n\n')}`,
+              text: `# World's First Completions for "${player}"${eliteTierText}\n\nFound ${results.length} contest completion(s):\n\n${playerResults.join('\n\n')}`,
             },
           ],
         };
@@ -352,7 +363,67 @@ export function registerLeaderboardTools(server: McpServer): void {
     }
   );
 
-  // Tool: Get World's First winner for an activity
+  // Tool: Filter leaderboard entries by activity, rank, or player name
+  server.tool(
+    'filter_leaderboard_entries',
+    'Filter leaderboard entries by activity name (partial), rank range, or partial player name. All filters are optional and case-insensitive.',
+    {
+      activity: z.string().optional().describe('Activity name (partial match, e.g., "Last Wish")'),
+      minRank: z.number().optional().describe('Minimum rank (inclusive)'),
+      maxRank: z.number().optional().describe('Maximum rank (inclusive)'),
+      player: z.string().optional().describe('Player name (partial match, e.g., "Datto")'),
+    },
+    async ({ activity, minRank, maxRank, player }) => {
+      const data = await loadLeaderboardData();
+      const allLeaderboards = [...data.raids, ...data.dungeons];
+      const entries: LeaderboardEntry[] = [];
+      for (const lb of allLeaderboards) {
+        // Filter by activity if provided
+        if (activity && !lb.activity.toLowerCase().includes(activity.toLowerCase())) continue;
+        for (const entry of lb.entries) {
+          // Filter by rank
+          if (typeof minRank === 'number' && entry.rank < minRank) continue;
+          if (typeof maxRank === 'number' && entry.rank > maxRank) continue;
+          // Filter by player name
+          if (player) {
+            const match = entry.players.some(
+              (p) =>
+                p.bungieName?.toLowerCase().includes(player.toLowerCase()) ||
+                p.displayName?.toLowerCase().includes(player.toLowerCase())
+            );
+            if (!match) continue;
+          }
+          entries.push(entry);
+        }
+      }
+      if (entries.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'No leaderboard entries found for the given filters.',
+            },
+          ],
+        };
+      }
+      // Summarize results for text output
+      const summary = entries
+        .slice(0, 10)
+        .map((e) => {
+          const playerNames = e.players.map((p) => p.bungieName).join(', ') || 'Unknown players';
+          return `#${e.rank} - ${playerNames} (${e.time})`;
+        })
+        .join('\n');
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Found ${entries.length} leaderboard entries.\n\nFirst 10 results:\n${summary}`,
+          },
+        ],
+      };
+    }
+  );
   server.tool(
     'get_worlds_first',
     "Get the World's First completion details for a specific raid or dungeon",
