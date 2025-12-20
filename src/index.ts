@@ -5,7 +5,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { BungieApiClient } from './api/index.js';
 import { ManifestCache } from './services/index.js';
-import { registerTools, registerLeaderboardTools } from './tools/index.js';
+import { registerTools, registerLeaderboardTools, registerRaidHubTools } from './tools/index.js';
+import { RaidHubClient } from './api/index.js';
 import { loadConfig, getConfigHelp, isValidApiKeyFormat, type Config } from './config.js';
 import dotenv from 'dotenv';
 import logger from './services/logger.js';
@@ -62,6 +63,25 @@ registerTools(server, bungieClient, manifestCache);
 
 // Register leaderboard tools (World's First data)
 registerLeaderboardTools(server);
+
+// Register RaidHub public tool (serves cached leaderboards even if no API key)
+registerRaidHubTools(server, undefined);
+
+// If enabled with API key, register live tools and start optional background updater
+if (config.USE_RAIDHUB) {
+  if (!config.RAIDHUB_API_KEY) {
+    logger.warn(
+      'USE_RAIDHUB is enabled but RAIDHUB_API_KEY is not set — live RaidHub features will be disabled; cached public endpoints remain available'
+    );
+  } else {
+    const raidhubClient = new RaidHubClient(config.RAIDHUB_API_KEY);
+    registerRaidHubTools(server, raidhubClient);
+    logger.info('RaidHub integration enabled: live RaidHub tools registered');
+
+    // Optional: background refresh can be added here (not started by default)
+    // Example: fetch popular leaderboards periodically and update cache
+  }
+}
 
 // Register prompts for common query patterns
 server.prompt(

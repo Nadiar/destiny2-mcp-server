@@ -148,4 +148,40 @@ describe('Config Module', () => {
       expect(help).toContain('https://www.bungie.net/en/Application');
     });
   });
+
+  describe('RaidHub config', () => {
+    it('should reject when USE_RAIDHUB is true but RAIDHUB_API_KEY missing', () => {
+      const env = {
+        BUNGIE_API_KEY: 'abcdef1234567890abcdef1234567890',
+        USE_RAIDHUB: 'true',
+      };
+
+      const result = validateConfig(env);
+      expect(result.success).toBe(false);
+      expect(result.errors!.some((e) => e.path === 'RAIDHUB_API_KEY')).toBe(true);
+    });
+
+    it('should accept when USE_RAIDHUB is true and RAIDHUB_API_KEY provided', () => {
+      const env = {
+        BUNGIE_API_KEY: 'abcdef1234567890abcdef1234567890',
+        USE_RAIDHUB: 'true',
+        RAIDHUB_API_KEY: 'raidhub-key-123',
+      };
+
+      const result = validateConfig(env);
+      expect(result.success).toBe(true);
+      expect(result.config!.USE_RAIDHUB).toBe(true);
+      expect(result.config!.RAIDHUB_API_KEY).toBe('raidhub-key-123');
+    });
+
+    it('should default USE_RAIDHUB to false', () => {
+      const env = {
+        BUNGIE_API_KEY: 'abcdef1234567890abcdef1234567890',
+      };
+
+      const result = validateConfig(env);
+      expect(result.success).toBe(true);
+      expect(result.config!.USE_RAIDHUB).toBe(false);
+    });
+  });
 });

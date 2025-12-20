@@ -17,39 +17,57 @@ const numericEnvVar = (min: number, max: number, defaultVal: string) =>
 /**
  * Environment variable schema with validation
  */
-const EnvSchema = z.object({
-  // Required
-  BUNGIE_API_KEY: z
-    .string()
-    .min(1, 'BUNGIE_API_KEY is required')
-    .regex(/^[a-f0-9]{32}$/i, 'BUNGIE_API_KEY must be a 32 character hex string')
-    .describe('Bungie API key from https://www.bungie.net/en/Application'),
+const EnvSchema = z
+  .object({
+    // Required
+    BUNGIE_API_KEY: z
+      .string()
+      .min(1, 'BUNGIE_API_KEY is required')
+      .regex(/^[a-f0-9]{32}$/i, 'BUNGIE_API_KEY must be a 32 character hex string')
+      .describe('Bungie API key from https://www.bungie.net/en/Application'),
 
-  // Optional with defaults
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info').describe('Logging level'),
+    // Optional with defaults
+    LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info').describe('Logging level'),
 
-  NODE_ENV: z
-    .enum(['development', 'production', 'test'])
-    .default('development')
-    .describe('Node environment'),
+    NODE_ENV: z
+      .enum(['development', 'production', 'test'])
+      .default('development')
+      .describe('Node environment'),
 
-  // Cache configuration
-  CACHE_TTL_HOURS: numericEnvVar(1, 168, '24') // 1 hour to 1 week
-    .describe('Manifest cache TTL in hours'),
+    // Cache configuration
+    CACHE_TTL_HOURS: numericEnvVar(1, 168, '24') // 1 hour to 1 week
+      .describe('Manifest cache TTL in hours'),
 
-  CACHE_MAX_SIZE_MB: numericEnvVar(50, 500, '100').describe('Maximum cache size in megabytes'),
+    CACHE_MAX_SIZE_MB: numericEnvVar(50, 500, '100').describe('Maximum cache size in megabytes'),
 
-  // API configuration
-  API_RATE_LIMIT_MS: numericEnvVar(50, 1000, '150').describe(
-    'Minimum milliseconds between API requests'
-  ),
+    // API configuration
+    API_RATE_LIMIT_MS: numericEnvVar(50, 1000, '150').describe(
+      'Minimum milliseconds between API requests'
+    ),
 
-  API_MAX_RETRIES: numericEnvVar(0, 5, '3').describe('Maximum number of API retry attempts'),
+    API_MAX_RETRIES: numericEnvVar(0, 5, '3').describe('Maximum number of API retry attempts'),
 
-  API_TIMEOUT_MS: numericEnvVar(5000, 60000, '30000').describe(
-    'API request timeout in milliseconds'
-  ),
-});
+    API_TIMEOUT_MS: numericEnvVar(5000, 60000, '30000').describe(
+      'API request timeout in milliseconds'
+    ),
+
+    // RaidHub integration
+    RAIDHUB_API_KEY: z
+      .string()
+      .optional()
+      .describe('RaidHub API key (optional) - required if USE_RAIDHUB is true'),
+
+    USE_RAIDHUB: z
+      .string()
+      .default('false')
+      .transform((v) => (v ? v.toLowerCase() === 'true' : false))
+      .pipe(z.boolean())
+      .describe('Enable RaidHub integration (true/false)'),
+  })
+  .refine((data) => !(data.USE_RAIDHUB && !data.RAIDHUB_API_KEY), {
+    message: 'RAIDHUB_API_KEY is required when USE_RAIDHUB is true',
+    path: ['RAIDHUB_API_KEY'],
+  });
 
 /**
  * Configuration type derived from schema
@@ -147,6 +165,8 @@ Optional Environment Variables:
   API_RATE_LIMIT_MS Minimum ms between API requests (default: 150, range: 50-1000)
   API_MAX_RETRIES   Max API retry attempts (default: 3, range: 0-5)
   API_TIMEOUT_MS    API request timeout in ms (default: 30000, range: 5000-60000)
+  RAIDHUB_API_KEY   Optional RaidHub API key (required if USE_RAIDHUB=true)
+  USE_RAIDHUB       Enable RaidHub integration: true or false (default: false)
 
 Example .env file:
   BUNGIE_API_KEY=your32characterhexkeyhere12345678
