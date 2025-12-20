@@ -102,74 +102,24 @@ For Docker deployment, use:
 }
 ```
 
-### Docker MCP Gateway
+### Docker MCP Gateway (Recommended)
 
-For [Docker MCP Gateway](https://github.com/docker/mcp-gateway) users, install via CLI:
+For [Docker MCP Gateway](https://github.com/docker/mcp-gateway) users, this server is available in the official Docker MCP catalog:
 
-**Step 1: Create Custom Catalog**
-
-Create `~/.docker/mcp/catalogs/custom-servers.yaml`:
-
-```yaml
-version: 3
-name: custom-servers
-displayName: Custom MCP Servers
-registry:
-  destiny2:
-    description: Production-ready Model Context Protocol (MCP) server for Destiny 2
-    title: Destiny 2
-    type: server
-    dateAdded: '2025-12-13T00:40:00Z'
-    image: ghcr.io/nadiar/destiny2-mcp-server:latest
-    ref: ''
-    icon: https://www.bungie.net/img/theme/destiny/icons/icon_d2.png
-    tools:
-      - name: search_player
-      - name: find_players
-      - name: get_profile
-      - name: get_character
-      - name: get_activity_history
-      - name: get_pgcr
-      - name: get_historical_stats
-      - name: search_items
-      - name: get_item_details
-      - name: get_activity_definition
-      - name: get_clan_roster
-      - name: get_item_image
-    secrets:
-      - name: destiny2.api_key
-        env: BUNGIE_API_KEY
-        example: your-32-character-hex-key
-    prompts: 0
-    resources: {}
-    metadata:
-      category: gaming
-      tags:
-        - destiny2
-        - bungie
-        - gaming
-        - api
-      license: MIT License
-      owner: Nadiar
-```
-
-**Step 2: Import and Enable**
+> **Note**: This requires [PR #883](https://github.com/docker/mcp-registry/pull/883) to be merged. Check the PR status before using these commands.
 
 ```bash
-# Import the custom catalog
-docker mcp catalog import ~/.docker/mcp/catalogs/custom-servers.yaml
-
-# Enable the server
-docker mcp server enable destiny2
+# Enable the server from the official catalog
+docker mcp server enable destiny2-mcp-server
 
 # Set your Bungie API key as a secret
-docker mcp secret set destiny2.api_key=your-32-character-hex-key
+docker mcp secret set destiny2-mcp-server.api_key=your-32-character-hex-key
 
 # Verify installation
 docker mcp server ls
 ```
 
-**Important**: The secret name must be exactly `destiny2.api_key` (matches the `secrets[].name` in the catalog). The Docker MCP Gateway will automatically inject this as the `BUNGIE_API_KEY` environment variable when starting the container.
+That's it! The Docker MCP Gateway will automatically pull the image and configure the server.
 
 **Updating:**
 
@@ -333,6 +283,7 @@ Top by Playtime:
 
 ## Available Tools
 
+### Player & Profile Tools
 | Tool | Description |
 |------|-------------|
 | `search_player` | Exact Bungie name lookup (requires #code) |
@@ -343,12 +294,42 @@ Top by Playtime:
 | `get_activity_stats` | Aggregated activity statistics with pagination (up to 1000), customizable fields, and activity filtering |
 | `get_pgcr` | Post-game carnage report with time data |
 | `get_historical_stats` | Lifetime PvE/PvP statistics by activity |
+| `get_clan_roster` | Full clan member list with online status |
+
+### Item Tools
+| Tool | Description |
+|------|-------------|
 | `search_items` | Search weapons/armor by name |
 | `get_item_details` | Full item info with perks, stats, and plug sets |
 | `get_item_image` | Item screenshot or icon (supports imageType parameter) |
 | `get_activity_definition` | Activity/encounter details from manifest |
-| `get_clan_roster` | Full clan member list with online status |
 | `get_plug_set` | Available perks for specific weapon/armor slots |
+
+### World's First Leaderboard Tools
+| Tool | Description |
+|------|-------------|
+| `list_leaderboards` | List all available World's First contest leaderboards |
+| `get_leaderboard` | Get top 100 contest completions for a raid/dungeon |
+| `get_worlds_first` | Get World's First winner details for an activity |
+| `search_leaderboard_player` | Find a player's contest completions across all activities |
+| `get_leaderboard_pgcr` | Get detailed player stats for a specific leaderboard entry |
+| `compare_leaderboard_players` | Compare two players' World's First achievements |
+| `get_leaderboard_stats` | Aggregate statistics across all leaderboards |
+| `filter_leaderboard_entries` | Filter leaderboard entries by activity, rank, or player name |
+#### Example: Filter Leaderboard Entries
+
+> "Show me all top 10 Salvation's Edge runs with Datto in the fireteam"
+
+```typescript
+{
+  activity: "Salvation's Edge",
+  minRank: 1,
+  maxRank: 10,
+  player: "Datto"
+}
+```
+
+Returns a list of leaderboard entries matching the filters, including rank, player names, and completion time.
 
 ## Releases and Updates
 
@@ -492,3 +473,23 @@ mcp install destiny2-mcp-server
 ## License
 
 MIT - See LICENSE file for details.
+
+## Leaderboard Data
+
+Pre-scraped World's First leaderboard data from raid.report and dungeon.report is included in `leaderboard-data/`:
+
+- **leaderboards-enriched.json** - Full data with player Bungie IDs, character classes, and stats
+- **leaderboards.json** - Basic data with PGCR IDs only
+
+### Included Activities
+
+**Raids (11):** Last Wish, Garden of Salvation, Deep Stone Crypt, Vault of Glass, Vow of the Disciple, King's Fall, Root of Nightmares, Crota's End, Salvation's Edge, Desert Perpetual (Contest + Epic Contest)
+
+**Dungeons (11):** Shattered Throne, Pit of Heresy, Prophecy, Grasp of Avarice, Duality, Spire of the Watcher, Ghosts of the Deep, Warlord's Ruin, Vesper's Host, Sundered Doctrine, Equilibrium
+
+Each entry includes:
+- Rank and completion time
+- PGCR ID for verification
+- Full fireteam with Bungie names and membership IDs
+- Character class and light level
+- Kill/death/assist stats per player

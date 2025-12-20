@@ -56,3 +56,9 @@ test-results/
 
 # Playwright (if used)
 playwright-report/
+
+# Leaderboard scraper (don't want users hammering raid.report)
+scripts/scrape-leaderboards.mjs
+scripts/enrich-leaderboards.mjs
+.leaderboard-cache/
+.pgcr-cache/
