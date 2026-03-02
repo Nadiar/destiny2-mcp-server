@@ -53,11 +53,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
-    "dotenv": "17.2.3",
-    "zod": "4.1.13"
+    "dotenv": "17.3.1",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@types/node": "25.0.1",
+    "@types/node": "25.3.3",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^4.0.15",
