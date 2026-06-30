@@ -17,12 +17,14 @@ describe('raidhub public leaderboard tool', () => {
   });
 
   it('returns helpful error when no cache and no client', async () => {
+    const uncachedRaid = `no-cache-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
     registerRaidHubTools(mockServer, undefined);
     expect(Object.keys(handlers)).toContain('raidhub_public_leaderboard');
 
     const res = await handlers['raidhub_public_leaderboard']({
       kind: 'contest',
-      raid: 'salvation-edge',
+      raid: uncachedRaid,
     });
     // Some servers may not include an isError flag; ensure the response contains the expected helpful message
     expect(res.content[0].text).toContain('Leaderboard not available');
