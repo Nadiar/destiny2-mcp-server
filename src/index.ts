@@ -248,6 +248,43 @@ If you encounter a raw hash, use:
   })
 );
 
+server.prompt(
+  'pantheon_helper',
+  'Helper for Pantheon activity names and hashes',
+  {},
+  () => ({
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `# Pantheon Helper
+
+Use this helper when users ask about Pantheon activities.
+
+## Current Active Pantheon Rotation
+
+- Pantheon: Insurrection Prime Revolutionary: Customize (hash: 747671496)
+- Pantheon: Morgeth Surpassing: Customize (hash: 2530656885)
+- Pantheon: Calus Resplendent: Customize (hash: 1516551982)
+
+## Guidance
+
+- Prefer these three hashes first for current Pantheon questions.
+- If users ask for verification, resolve with get_activity_definition using the hash.
+- If users ask for completions, use get_activity_stats and filter by activityHash.
+- If users ask for run-level details, use get_activity_history and then get_pgcr.
+
+## Notes
+
+- Pantheon has multiple legacy/reprise entries in DestinyActivityDefinition.
+- The three hashes above are the active set to prioritize in responses.`,
+        },
+      },
+    ],
+  })
+);
+
 // Start the server with stdio transport
 async function main() {
   // Initialize manifest cache before accepting requests.
