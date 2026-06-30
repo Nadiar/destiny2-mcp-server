@@ -53,7 +53,6 @@ export class RaidHubClient {
       const json = (await res.json()) as { success?: boolean; response?: T } | T;
       // Some endpoints wrap payload in { success, response }
       if (typeof json === 'object' && json && 'response' in json) {
-        // @ts-expect-error - response is generic
         return (json as any).response as T;
       }
       return json as T;

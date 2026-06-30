@@ -39,7 +39,7 @@ describe('raidhub public leaderboard tool', () => {
       kind: 'contest',
       raid: 'salvation-edge',
     });
-    expect(res.content[0].json).toEqual({ entries: [{ team: 'a' }] });
+    expect(res.structuredContent).toEqual({ entries: [{ team: 'a' }] });
   });
 
   it('fetches live when client provided and updates cache', async () => {
@@ -53,7 +53,7 @@ describe('raidhub public leaderboard tool', () => {
       kind: 'contest',
       raid: 'salvation-edge',
     });
-    expect(res.content[0].json).toEqual({ entries: [{ team: 'live' }] });
+    expect(res.structuredContent).toEqual({ entries: [{ team: 'live' }] });
 
     const cached = await raidhubCache.get('contest:salvation-edge');
     expect(cached?.payload).toEqual({ entries: [{ team: 'live' }] });

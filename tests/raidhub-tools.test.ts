@@ -36,18 +36,18 @@ describe('raidhub tools registration', () => {
     );
 
     const manifestRes = await handlers['raidhub_manifest']({});
-    expect(manifestRes.content[0].json).toEqual({ foo: 'bar' });
+    expect(manifestRes.structuredContent).toEqual({ foo: 'bar' });
 
     const searchRes = await handlers['raidhub_player_search']({ query: 'datto' });
-    expect(searchRes.content[0].json).toEqual({ results: [] });
+    expect(searchRes.structuredContent).toEqual({ results: [] });
 
     const pgcrRes = await handlers['raidhub_get_pgcr']({ instanceId: '123' });
-    expect(pgcrRes.content[0].json).toEqual({ pgcr: true });
+    expect(pgcrRes.structuredContent).toEqual({ pgcr: true });
 
     const contestRes = await handlers['raidhub_contest_leaderboard']({ raid: 'salvation-edge' });
-    expect(contestRes.content[0].json).toEqual({ entries: [] });
+    expect(contestRes.structuredContent).toEqual({ entries: [] });
 
     const teamFirstRes = await handlers['raidhub_team_first']({ activity: 'act', version: 'v1' });
-    expect(teamFirstRes.content[0].json).toEqual({ entries: [] });
+    expect(teamFirstRes.structuredContent).toEqual({ entries: [] });
   });
 });

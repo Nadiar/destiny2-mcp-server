@@ -4,6 +4,13 @@ import { RaidHubClient } from '../api/raidhub-client.js';
 
 import { raidhubCache } from '../services/raidhub-cache.js';
 
+function successResponse(payload: unknown, text = 'OK') {
+  return {
+    content: [{ type: 'text' as const, text }],
+    structuredContent: payload as Record<string, unknown>,
+  };
+}
+
 export function registerRaidHubTools(server: McpServer, client?: RaidHubClient): void {
   // Public tool: always register. Serves cached results when client/key not present.
   server.tool(
@@ -80,18 +87,18 @@ export function registerRaidHubTools(server: McpServer, client?: RaidHubClient):
 
           // Store in cache and return
           await raidhubCache.set(key, payload);
-          return { content: [{ type: 'json', json: payload }] };
+          return successResponse(payload, 'Leaderboard fetched successfully');
         } catch (e) {
           // If fetch failed but we have cache, return it with a warning
           if (cached) {
             return {
               content: [
-                { type: 'json', json: cached.payload },
                 {
                   type: 'text',
                   text: `Warning: live fetch failed - returning cached result. Error: ${e instanceof Error ? e.message : String(e)}`,
                 },
               ],
+              structuredContent: cached.payload as Record<string, unknown>,
             };
           }
 
@@ -109,7 +116,7 @@ export function registerRaidHubTools(server: McpServer, client?: RaidHubClient):
 
       // No client: return cached if present
       if (cached) {
-        return { content: [{ type: 'json', json: cached.payload }] };
+        return successResponse(cached.payload, 'Returning cached leaderboard result');
       }
 
       return {
@@ -134,9 +141,7 @@ export function registerRaidHubTools(server: McpServer, client?: RaidHubClient):
     async () => {
       try {
         const manifest = await client.getManifest();
-        return {
-          content: [{ type: 'json', json: manifest }],
-        };
+        return successResponse(manifest, 'RaidHub manifest fetched successfully');
       } catch (error) {
         return {
           content: [
@@ -162,7 +167,7 @@ export function registerRaidHubTools(server: McpServer, client?: RaidHubClient):
     async ({ query, membershipType = -1, count = 20 }) => {
       try {
         const res = await client.playerSearch(query, membershipType, count);
-        return { content: [{ type: 'json', json: res }] };
+        return successResponse(res, 'RaidHub player search completed');
       } catch (error) {
         return {
           content: [
@@ -184,7 +189,7 @@ export function registerRaidHubTools(server: McpServer, client?: RaidHubClient):
     async ({ instanceId }) => {
       try {
         const pgcr = await client.getPgcr(instanceId);
-        return { content: [{ type: 'json', json: pgcr }] };
+        return successResponse(pgcr, 'RaidHub PGCR fetched successfully');
       } catch (error) {
         return {
           content: [
@@ -212,7 +217,7 @@ export function registerRaidHubTools(server: McpServer, client?: RaidHubClient):
         const board = await client.getContestLeaderboard(raid, page, count);
         // update cache as a side-effect
         await raidhubCache.set(`contest:${raid}`, board);
-        return { content: [{ type: 'json', json: board }] };
+        return successResponse(board, 'RaidHub contest leaderboard fetched successfully');
       } catch (error) {
         return {
           content: [
@@ -240,7 +245,7 @@ export function registerRaidHubTools(server: McpServer, client?: RaidHubClient):
       try {
         const board = await client.getTeamFirstLeaderboard(activity, version, page, count);
         await raidhubCache.set(`team_first:${activity}:${version}`, board);
-        return { content: [{ type: 'json', json: board }] };
+        return successResponse(board, 'RaidHub team-first leaderboard fetched successfully');
       } catch (error) {
         return {
           content: [
