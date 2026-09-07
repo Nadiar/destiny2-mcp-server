@@ -53,9 +53,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
-    "dotenv": "17.2.3",
+    "dotenv": "17.4.2",
     "playwright": "^1.57.0",
-    "zod": "4.1.13"
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@types/node": "25.0.1",
@@ -69,7 +69,7 @@
     "husky": "^9.0.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.0.0",
-    "tsx": "4.21.0",
+    "tsx": "4.23.13",
     "typescript": "5.9.3",
     "vitest": "^4.0.15"
   },
